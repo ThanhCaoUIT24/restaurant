@@ -1,0 +1,452 @@
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "windows"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums derived from SE104/database.pdf
+enum TableStatus {
+  TRONG
+  DADAT
+  COKHACH
+  CHOTHANHTOAN
+  CANDON
+}
+
+enum OrderItemStatus {
+  CHOCHEBIEN
+  DANGLAM
+  HOANTHANH
+  DAPHUCVU
+  DAHUY
+}
+
+enum VoidRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum PaymentMethod {
+  TienMat
+  The
+  QR
+  Diem
+}
+
+enum ReservationStatus {
+  CHODEN
+  DANHANBAN
+  HUY
+  KHONGDEN
+}
+
+enum POStatus {
+  MOITAO
+  DAGUI
+  DANHANDU
+  DANHANMOTPHAN
+  DAHUY
+}
+
+enum ShiftStatus {
+  HOATDONG
+  DADONG
+}
+
+model NhanVien {
+  id         String   @id @default(uuid())
+  hoTen      String
+  soDienThoai String? @unique
+  vaiTroId   String?
+  taiKhoan   TaiKhoanNguoiDung?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  vaiTro     VaiTro?  @relation(fields: [vaiTroId], references: [id], onDelete: SetNull)
+  donHang    DonHang[]
+  caThuNgan  CaThuNgan[]
+  phieuNhap  PhieuNhapKho[]
+  lichPhanCa LichPhanCa[]
+  yeuCauHuyTao    YeuCauHuyMon[] @relation("VoidRequester")
+  yeuCauHuyDuyet  YeuCauHuyMon[] @relation("VoidApprover")
+}
+
+model VaiTro {
+  id         String    @id @default(uuid())
+  ten        String    @unique
+  moTa       String?
+  nhanVien   NhanVien[]
+  quyen      VaiTroQuyen[]
+}
+
+model Quyen {
+  id        String       @id @default(uuid())
+  ma        String       @unique
+  moTa      String?
+  vaiTro    VaiTroQuyen[]
+}
+
+model VaiTroQuyen {
+  id      String @id @default(uuid())
+  vaiTro  VaiTro @relation(fields: [vaiTroId], references: [id], onDelete: Cascade)
+  vaiTroId String
+  quyen   Quyen @relation(fields: [quyenId], references: [id], onDelete: Cascade)
+  quyenId String
+  @@unique([vaiTroId, quyenId])
+}
+
+model TaiKhoanNguoiDung {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  passwordHash String
+  nhanVienId   String   @unique
+  nhanVien     NhanVien @relation(fields: [nhanVienId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+}
+
+model DanhMucMon {
+  id        String   @id @default(uuid())
+  ten       String   @unique
+  moTa      String?
+  monAn     MonAn[]
+}
+
+model MonAn {
+  id             String   @id @default(uuid())
+  ten            String
+  moTa           String?
+  giaBan         Decimal  @db.Decimal(12,2)
+  hinhAnh        String?
+  trangThai      Boolean  @default(true) // true = dang ban
+  tramCheBien    String?
+  danhMucId      String?
+  danhMuc        DanhMucMon? @relation(fields: [danhMucId], references: [id], onDelete: SetNull)
+  congThuc       CongThucMon[]
+  tuyChonMon     ChiTietTuyChonMon[]
+  chiTietDonHang ChiTietDonHang[]
+}
+
+model NguyenVatLieu {
+  id             String   @id @default(uuid())
+  ten            String
+  donViTinh      String
+  soLuongTon     Decimal  @db.Decimal(12,3) @default(0)
+  mucTonToiThieu Decimal  @db.Decimal(12,3) @default(0)
+  giaNhapGanNhat Decimal? @db.Decimal(12,2)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  congThuc       CongThucMon[]
+  chiTietDonMua  ChiTietDonMuaHang[]
+  chiTietNhap    ChiTietNhapKho[]
+  nhatKyXuat     NhatKyXuatKho[]
+}
+
+model CongThucMon {
+  id             String         @id @default(uuid())
+  monAnId        String
+  nguyenVatLieuId String
+  soLuong        Decimal        @db.Decimal(12,3)
+  monAn          MonAn          @relation(fields: [monAnId], references: [id], onDelete: Cascade)
+  nguyenVatLieu  NguyenVatLieu  @relation(fields: [nguyenVatLieuId], references: [id], onDelete: Cascade)
+  @@unique([monAnId, nguyenVatLieuId])
+}
+
+model KhuVucBan {
+  id     String @id @default(uuid())
+  ten    String
+  ban    Ban[]
+}
+
+model Ban {
+  id          String       @id @default(uuid())
+  ten         String
+  soGhe       Int          @default(4)
+  trangThai   TableStatus  @default(TRONG)
+  posX        Float?
+  posY        Float?
+  width       Float?
+  height      Float?
+  shape       String?      // rect, circle
+  khuVucId    String?
+  khuVuc      KhuVucBan?   @relation(fields: [khuVucId], references: [id], onDelete: SetNull)
+  donHang     DonHang[]
+  datBan      DatBan[]
+}
+
+model DonHang {
+  id           String      @id @default(uuid())
+  banId        String
+  nhanVienId   String?
+  trangThai    String? // open/closed etc
+  ghiChu       String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  ban          Ban         @relation(fields: [banId], references: [id])
+  nhanVien     NhanVien?   @relation(fields: [nhanVienId], references: [id], onDelete: SetNull)
+  chiTiet      ChiTietDonHang[]
+  hoaDon       HoaDon[]
+  yeuCauHuy    YeuCauHuyMon[]
+}
+
+model ChiTietDonHang {
+  id          String          @id @default(uuid())
+  donHangId   String
+  monAnId     String
+  soLuong     Int
+  donGia      Decimal         @db.Decimal(12,2)
+  trangThai   OrderItemStatus @default(CHOCHEBIEN)
+  ghiChu      String?
+  donHang     DonHang         @relation(fields: [donHangId], references: [id], onDelete: Cascade)
+  monAn       MonAn           @relation(fields: [monAnId], references: [id], onDelete: Restrict)
+  tuyChon     ChiTietTuyChonMon[]
+  yeuCauHuy   YeuCauHuyMon[]
+}
+
+model TuyChonMon {
+  id      String  @id @default(uuid())
+  ten     String
+  giaThem Decimal @db.Decimal(12,2) @default(0)
+  chiTiet ChiTietTuyChonMon[]
+}
+
+model ChiTietTuyChonMon {
+  id              String          @id @default(uuid())
+  chiTietDonHangId String
+  tuyChonMonId    String
+  monAnId         String?
+  chiTietDonHang  ChiTietDonHang  @relation(fields: [chiTietDonHangId], references: [id], onDelete: Cascade)
+  tuyChonMon      TuyChonMon      @relation(fields: [tuyChonMonId], references: [id], onDelete: Cascade)
+  monAn           MonAn?          @relation(fields: [monAnId], references: [id], onDelete: SetNull)
+}
+
+model HoaDon {
+  id            String      @id @default(uuid())
+  donHangId     String
+  tongTienHang  Decimal     @db.Decimal(12,2)
+  giamGia       Decimal?    @db.Decimal(12,2)
+  thueVAT       Decimal?    @db.Decimal(12,2)
+  tongThanhToan Decimal     @db.Decimal(12,2)
+  trangThai     String?
+  createdAt     DateTime    @default(now())
+  donHang       DonHang     @relation(fields: [donHangId], references: [id], onDelete: Cascade)
+  thanhToan     ThanhToan[]
+}
+
+model ThanhToan {
+  id         String         @id @default(uuid())
+  hoaDonId   String
+  phuongThuc PaymentMethod
+  soTien     Decimal        @db.Decimal(12,2)
+  ghiChu     String?
+  createdAt  DateTime       @default(now())
+  hoaDon     HoaDon         @relation(fields: [hoaDonId], references: [id], onDelete: Cascade)
+}
+
+model CaThuNgan {
+  id            String    @id @default(uuid())
+  nhanVienId    String
+  thoiGianMo    DateTime
+  thoiGianDong  DateTime?
+  tienMatDauCa  Decimal   @db.Decimal(12,2)
+  tienMatThuc   Decimal?  @db.Decimal(12,2)
+  trangThai     ShiftStatus @default(HOATDONG)
+  nhanVien      NhanVien  @relation(fields: [nhanVienId], references: [id], onDelete: Restrict)
+  zReport       ZReport?
+}
+
+model ZReport {
+  id           String    @id @default(uuid())
+  shiftId      String    @unique
+  closedAt     DateTime  @default(now())
+  summary      Json
+  expectedCash Decimal   @db.Decimal(12,2)
+  actualCash   Decimal?  @db.Decimal(12,2)
+  variance     Decimal?  @db.Decimal(12,2)
+  shift        CaThuNgan @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+}
+
+model KhachHang {
+  id          String   @id @default(uuid())
+  hoTen       String
+  soDienThoai String   @unique
+  hangThe     String?
+  diemTichLuy Int      @default(0)
+  datBan      DatBan[]
+  lichSuDiem  LichSuTichDiem[]
+}
+
+model DatBan {
+  id           String             @id @default(uuid())
+  khachHangId  String
+  banId        String?
+  soKhach      Int
+  thoiGianDen  DateTime
+  ghiChu       String?
+  trangThai    ReservationStatus @default(CHODEN)
+  khachHang    KhachHang         @relation(fields: [khachHangId], references: [id], onDelete: Cascade)
+  ban          Ban?              @relation(fields: [banId], references: [id], onDelete: SetNull)
+  
+  // Index for fast lookup by table and time (prevents double booking checked at app layer)
+  @@index([banId, thoiGianDen])
+}
+
+model LichSuTichDiem {
+  id          String   @id @default(uuid())
+  khachHangId String
+  diemCong    Int      @default(0)
+  diemTru     Int      @default(0)
+  moTa        String?
+  createdAt   DateTime @default(now())
+  khachHang   KhachHang @relation(fields: [khachHangId], references: [id], onDelete: Cascade)
+}
+
+model NhaCungCap {
+  id      String @id @default(uuid())
+  ten     String
+  dienThoai String?
+  diaChi   String?
+  donMuaHang DonMuaHang[]
+}
+
+model DonMuaHang {
+  id          String    @id @default(uuid())
+  nhaCungCapId String
+  trangThai   POStatus @default(MOITAO)
+  createdAt   DateTime @default(now())
+  nhaCungCap  NhaCungCap @relation(fields: [nhaCungCapId], references: [id])
+  chiTiet     ChiTietDonMuaHang[]
+  phieuNhap   PhieuNhapKho[]
+}
+
+model ChiTietDonMuaHang {
+  id             String   @id @default(uuid())
+  donMuaHangId   String
+  nguyenVatLieuId String
+  soLuong        Decimal  @db.Decimal(12,3)
+  donGia         Decimal  @db.Decimal(12,2)
+  donMuaHang     DonMuaHang @relation(fields: [donMuaHangId], references: [id], onDelete: Cascade)
+  nguyenVatLieu  NguyenVatLieu @relation(fields: [nguyenVatLieuId], references: [id], onDelete: Restrict)
+}
+
+model PhieuNhapKho {
+  id            String   @id @default(uuid())
+  donMuaHangId  String?
+  nhanVienId    String?
+  createdAt     DateTime @default(now())
+  donMuaHang    DonMuaHang? @relation(fields: [donMuaHangId], references: [id], onDelete: SetNull)
+  nhanVien      NhanVien?   @relation(fields: [nhanVienId], references: [id], onDelete: SetNull)
+  chiTiet       ChiTietNhapKho[]
+}
+
+model ChiTietNhapKho {
+  id             String   @id @default(uuid())
+  phieuNhapKhoId String
+  nguyenVatLieuId String
+  soLuong        Decimal  @db.Decimal(12,3)
+  donGia         Decimal  @db.Decimal(12,2)
+  phieuNhapKho   PhieuNhapKho @relation(fields: [phieuNhapKhoId], references: [id], onDelete: Cascade)
+  nguyenVatLieu  NguyenVatLieu @relation(fields: [nguyenVatLieuId], references: [id], onDelete: Restrict)
+}
+
+model NhatKyXuatKho {
+  id             String   @id @default(uuid())
+  loai           String   // BANHANG, HUYHANG, DIEUCHINH
+  nguyenVatLieuId String
+  soLuong        Decimal  @db.Decimal(12,3)
+  ghiChu         String?
+  createdAt      DateTime @default(now())
+  nguyenVatLieu  NguyenVatLieu @relation(fields: [nguyenVatLieuId], references: [id], onDelete: Restrict)
+}
+
+model CaLamViec {
+  id        String   @id @default(uuid())
+  ten       String
+  batDau    String   // HH:mm
+  ketThuc   String   // HH:mm
+  lichPhanCa LichPhanCa[]
+}
+
+model LichPhanCa {
+  id          String   @id @default(uuid())
+  nhanVienId  String
+  caLamViecId String
+  ngay        DateTime
+  nhanVien    NhanVien   @relation(fields: [nhanVienId], references: [id], onDelete: Cascade)
+  caLamViec   CaLamViec  @relation(fields: [caLamViecId], references: [id], onDelete: Cascade)
+  chamCong    ChamCong[]
+  @@unique([nhanVienId, caLamViecId, ngay])
+}
+
+model ChamCong {
+  id           String   @id @default(uuid())
+  lichPhanCaId String
+  thoiGianVao  DateTime?
+  thoiGianRa   DateTime?
+  trangThai    String?
+  lichPhanCa   LichPhanCa @relation(fields: [lichPhanCaId], references: [id], onDelete: Cascade)
+}
+
+model CauHinhHeThong {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+}
+
+model NhatKyHeThong {
+  id              String   @id @default(uuid())
+  hanhDong        String
+  thongTinBoSung  String?
+  createdAt       DateTime @default(now())
+}
+
+// ==================== PROMOTION / DISCOUNT ====================
+
+model KhuyenMai {
+  id              String   @id @default(uuid())
+  ten             String
+  loai            String   // PHAN_TRAM, SO_TIEN
+  giaTri          Decimal  @db.Decimal(12,2)
+  dieuKien        String?  // JSON: { minBill, daysOfWeek, startHour, endHour }
+  ngayBatDau      DateTime?
+  ngayKetThuc     DateTime?
+  trangThai       Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// ==================== LOYALTY TIERS ====================
+
+model HangThanhVien {
+  id              String   @id @default(uuid())
+  ten             String   @unique
+  mucTichDiem     Int      @default(10000)  // Số tiền để được 1 điểm
+  tyLeQuyDoi      Int      @default(1000)   // 1 điểm = X VND
+  diemToiThieu    Int      @default(0)      // Điểm tối thiểu để đạt hạng
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// ==================== VOID REQUESTS ====================
+
+model YeuCauHuyMon {
+  id              String            @id @default(uuid())
+  donHangId       String
+  chiTietDonHangId String
+  lyDo            String            // Reason for void request
+  trangThai       VoidRequestStatus @default(PENDING)
+  nguoiYeuCauId   String?           // Waiter who requested
+  nguoiDuyetId    String?           // Manager who approved/rejected
+  ghiChuDuyet     String?           // Approval/rejection note
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  
+  donHang         DonHang           @relation(fields: [donHangId], references: [id], onDelete: Cascade)
+  chiTietDonHang  ChiTietDonHang    @relation(fields: [chiTietDonHangId], references: [id], onDelete: Cascade)
+  nguoiYeuCau     NhanVien?         @relation("VoidRequester", fields: [nguoiYeuCauId], references: [id], onDelete: SetNull)
+  nguoiDuyet      NhanVien?         @relation("VoidApprover", fields: [nguoiDuyetId], references: [id], onDelete: SetNull)
+}

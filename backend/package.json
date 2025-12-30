@@ -1,0 +1,37 @@
+{
+  "name": "restaurant-rms-backend",
+  "version": "0.1.0",
+  "description": "Restaurant management system backend (Express + PostgreSQL)",
+  "main": "src/server.js",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
+    "test": "jest --runInBand",
+    "lint": "eslint .",
+    "seed": "node prisma/seed.js",
+    "seed:full": "node prisma/seed-full.js",
+    "migrate:kds-permission": "node scripts/migrate-kds-permission.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.15.1",
+    "bcrypt": "^6.0.0",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "helmet": "^7.1.0",
+    "joi": "^17.12.3",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
+    "pg": "^8.11.5",
+    "resend": "^6.5.2"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "nodemon": "^3.1.4",
+    "prisma": "^5.15.1",
+    "jest": "^29.6.1",
+    "supertest": "^6.3.4"
+  }
+}

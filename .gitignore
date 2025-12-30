@@ -1,0 +1,59 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Environment files (contain secrets)
+.env
+.env.local
+.env.*.local
+backend/.env
+frontend/.env
+
+# Build outputs
+dist/
+build/
+frontend/dist/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# IDE/Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Prisma
+backend/prisma/*.db
+backend/prisma/*.db-journal
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Test coverage
+coverage/
+
+# Zip files
+*.zip
+
+# Python virtual environment
+Ran/
+venv/
+env/
+ENV/
+
+# Documentation files (large PDFs and extracted text)
+*.pdf
+*_extracted.txt
+*_full.txt
+SE104_extracted.txt
+SE104_full.txt

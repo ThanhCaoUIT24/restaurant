@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Permissions - Restaurant Management</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        button.danger {
+            background: #e74c3c;
+        }
+        
+        button.danger:hover {
+            background: #c0392b;
+        }
+        
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 6px;
+            background: white;
+            border: 1px solid #ddd;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .result pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        
+        .success {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        
+        .error {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        
+        .warning {
+            color: #f39c12;
+            font-weight: bold;
+        }
+        
+        .info {
+            color: #3498db;
+            font-weight: bold;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 5px;
+            margin-bottom: 5px;
+        }
+        
+        .badge.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .badge.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .badge.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        input {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            width: 200px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .login-form {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug Permissions Tool</h1>
+        <p class="subtitle">Công cụ kiểm tra và debug hệ thống phân quyền</p>
+        
+        <div class="section">
+            <h2>1️⃣ Kiểm tra Token trong LocalStorage</h2>
+            <button onclick="checkToken()">Kiểm tra Token</button>
+            <button onclick="decodeToken()">Decode Token & Xem Permissions</button>
+            <div id="tokenResult" class="result" style="display: none;"></div>
+        </div>
+        
+        <div class="section">
+            <h2>2️⃣ Test Login</h2>
+            <div class="login-form">
+                <input type="text" id="username" placeholder="Username" value="admin">
+                <input type="password" id="password" placeholder="Password" value="admin123">
+                <button onclick="testLogin()">Login</button>
+            </div>
+            <div id="loginResult" class="result" style="display: none;"></div>
+        </div>
+        
+        <div class="section">
+            <h2>3️⃣ Test API Calls</h2>
+            <button onclick="testMenuAPI()">Test Menu API</button>
+            <button onclick="testOrdersAPI()">Test Orders API</button>
+            <button onclick="testTablesAPI()">Test Tables API</button>
+            <button onclick="testReportsAPI()">Test Reports API</button>
+            <div id="apiResult" class="result" style="display: none;"></div>
+        </div>
+        
+        <div class="section">
+            <h2>4️⃣ Kiểm tra Backend Connection</h2>
+            <button onclick="checkBackend()">Ping Backend</button>
+            <button onclick="checkMe()">Test /api/auth/me</button>
+            <div id="backendResult" class="result" style="display: none;"></div>
+        </div>
+        
+        <div class="section">
+            <h2>5️⃣ Clear & Reset</h2>
+            <button class="danger" onclick="clearStorage()">Clear LocalStorage</button>
+            <button class="danger" onclick="fullReset()">Full Reset & Reload</button>
+            <div id="resetResult" class="result" style="display: none;"></div>
+        </div>
+    </div>
+    
+    <script>
+        function parseJwt(token) {
+            try {
+                const base64Url = token.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(c => 
+                    '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+                ).join(''));
+                return JSON.parse(jsonPayload);
+            } catch (e) {
+                return null;
+            }
+        }
+        
+        function formatResult(html, resultId) {
+            const el = document.getElementById(resultId);
+            el.style.display = 'block';
+            el.innerHTML = html;
+        }
+        
+        function checkToken() {
+            const accessToken = localStorage.getItem('accessToken');
+            const refreshToken = localStorage.getItem('refreshToken');
+            
+            let html = '<pre>';
+            
+            if (!accessToken) {
+                html += '<span class="error">❌ KHÔNG CÓ ACCESS TOKEN</span>\n';
+                html += 'Bạn cần đăng nhập.\n';
+            } else {
+                html += '<span class="success">✓ Có Access Token</span>\n';
+                html += `Token (50 ký tự đầu): ${accessToken.substring(0, 50)}...\n\n`;
+            }
+            
+            if (!refreshToken) {
+                html += '<span class="warning">⚠ KHÔNG CÓ REFRESH TOKEN</span>\n';
+            } else {
+                html += '<span class="success">✓ Có Refresh Token</span>\n';
+            }
+            
+            html += '</pre>';
+            formatResult(html, 'tokenResult');
+        }
+        
+        function decodeToken() {
+            const token = localStorage.getItem('accessToken');
+            
+            if (!token) {
+                formatResult('<pre><span class="error">❌ Không có token để decode</span></pre>', 'tokenResult');
+                return;
+            }
+            
+            const decoded = parseJwt(token);
+            
+            if (!decoded) {
+                formatResult('<pre><span class="error">❌ Token không hợp lệ</span></pre>', 'tokenResult');
+                return;
+            }
+            
+            const expiresAt = new Date(decoded.exp * 1000);
+            const isExpired = Date.now() > decoded.exp * 1000;
+            
+            let html = '<pre>';
+            html += '<span class="success">✓ Token decoded thành công</span>\n\n';
+            html += `<span class="info">User ID:</span> ${decoded.id}\n`;
+            html += `<span class="info">Roles:</span> ${JSON.stringify(decoded.roles)}\n`;
+            html += `<span class="info">Số permissions:</span> ${decoded.permissions?.length || 0}\n\n`;
+            
+            if (isExpired) {
+                html += `<span class="error">❌ Token ĐÃ HẾT HẠN</span>\n`;
+            } else {
+                html += `<span class="success">✓ Token còn hạn</span>\n`;
+            }
+            
+            html += `<span class="info">Hết hạn lúc:</span> ${expiresAt.toLocaleString('vi-VN')}\n`;
+            html += `<span class="info">Hiện tại:</span> ${new Date().toLocaleString('vi-VN')}\n\n`;
+            
+            if (decoded.permissions && decoded.permissions.length > 0) {
+                html += '<span class="success">Permissions:</span>\n';
+                decoded.permissions.forEach(perm => {
+                    html += `  • ${perm}\n`;
+                });
+            } else {
+                html += '<span class="error">❌ KHÔNG CÓ PERMISSIONS!</span>\n';
+            }
+            
+            html += '</pre>';
+            formatResult(html, 'tokenResult');
+        }
+        
+        async function testLogin() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            formatResult('<pre>⏳ Đang login...</pre>', 'loginResult');
+            
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await response.json();
+                
+                let html = '<pre>';
+                
+                if (!response.ok) {
+                    html += `<span class="error">❌ Login thất bại (${response.status})</span>\n`;
+                    html += `Error: ${JSON.stringify(data, null, 2)}\n`;
+                } else {
+                    html += '<span class="success">✓ Login thành công!</span>\n\n';
+                    
+                    if (data.accessToken) {
+                        localStorage.setItem('accessToken', data.accessToken);
+                        html += '<span class="success">✓ Access Token đã lưu vào localStorage</span>\n';
+                    }
+                    
+                    if (data.refreshToken) {
+                        localStorage.setItem('refreshToken', data.refreshToken);
+                        html += '<span class="success">✓ Refresh Token đã lưu vào localStorage</span>\n';
+                    }
+                    
+                    html += '\n<span class="info">User Info:</span>\n';
+                    html += `  ID: ${data.user.id}\n`;
+                    html += `  Username: ${data.user.username}\n`;
+                    html += `  Họ tên: ${data.user.hoTen}\n`;
+                    html += `  Roles: ${JSON.stringify(data.user.roles)}\n`;
+                    html += `  Permissions: ${data.user.permissions?.length || 0} quyền\n\n`;
+                    
+                    if (data.user.permissions && data.user.permissions.length > 0) {
+                        html += '<span class="success">Danh sách permissions:</span>\n';
+                        data.user.permissions.forEach(perm => {
+                            html += `  • ${perm}\n`;
+                        });
+                    }
+                }
+                
+                html += '</pre>';
+                formatResult(html, 'loginResult');
+                
+            } catch (error) {
+                formatResult(`<pre><span class="error">❌ Lỗi kết nối: ${error.message}</span></pre>`, 'loginResult');
+            }
+        }
+        
+        async function testAPI(endpoint, resultId) {
+            const token = localStorage.getItem('accessToken');
+            
+            if (!token) {
+                formatResult('<pre><span class="error">❌ Không có token. Vui lòng login trước.</span></pre>', resultId);
+                return;
+            }
+            
+            formatResult(`<pre>⏳ Đang gọi ${endpoint}...</pre>`, resultId);
+            
+            try {
+                const response = await fetch(endpoint, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                let html = '<pre>';
+                html += `<span class="info">Endpoint:</span> ${endpoint}\n`;
+                html += `<span class="info">Status:</span> ${response.status} ${response.statusText}\n\n`;
+                
+                if (response.status === 401) {
+                    html += '<span class="error">❌ UNAUTHORIZED - Token không hợp lệ hoặc đã hết hạn</span>\n';
+                    html += 'Giải pháp: Đăng nhập lại\n';
+                } else if (response.status === 403) {
+                    html += '<span class="error">❌ FORBIDDEN - Không có quyền truy cập</span>\n';
+                    html += `Chi tiết: ${JSON.stringify(data, null, 2)}\n`;
+                } else if (response.ok) {
+                    html += '<span class="success">✓ REQUEST THÀNH CÔNG!</span>\n';
+                    html += `Response: ${JSON.stringify(data, null, 2)}\n`;
+                } else {
+                    html += `<span class="warning">⚠ Status ${response.status}</span>\n`;
+                    html += `Response: ${JSON.stringify(data, null, 2)}\n`;
+                }
+                
+                html += '</pre>';
+                formatResult(html, resultId);
+                
+            } catch (error) {
+                formatResult(`<pre><span class="error">❌ Lỗi: ${error.message}</span>\nKiểm tra xem backend có đang chạy không (http://localhost:4000)</pre>`, resultId);
+            }
+        }
+        
+        function testMenuAPI() {
+            testAPI('/api/menu/dishes', 'apiResult');
+        }
+        
+        function testOrdersAPI() {
+            testAPI('/api/orders', 'apiResult');
+        }
+        
+        function testTablesAPI() {
+            testAPI('/api/tables', 'apiResult');
+        }
+        
+        function testReportsAPI() {
+            testAPI('/api/reports/sales?startDate=2025-01-01&endDate=2025-12-31', 'apiResult');
+        }
+        
+        async function checkBackend() {
+            formatResult('<pre>⏳ Đang ping backend...</pre>', 'backendResult');
+            
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                
+                // Any response means backend is up
+                let html = '<pre>';
+                html += '<span class="success">✓ Backend đang chạy!</span>\n';
+                html += `Status: ${response.status}\n`;
+                html += 'Backend URL: http://localhost:4000\n';
+                html += 'Frontend proxy: /api → http://localhost:4000\n';
+                html += '</pre>';
+                formatResult(html, 'backendResult');
+                
+            } catch (error) {
+                formatResult(`<pre><span class="error">❌ Không kết nối được backend</span>\nLỗi: ${error.message}\n\nKiểm tra:\n1. Backend có đang chạy không?\n2. Port có đúng là 4000 không?\n3. Proxy Vite có hoạt động không?</pre>`, 'backendResult');
+            }
+        }
+        
+        async function checkMe() {
+            const token = localStorage.getItem('accessToken');
+            
+            if (!token) {
+                formatResult('<pre><span class="error">❌ Không có token. Login trước.</span></pre>', 'backendResult');
+                return;
+            }
+            
+            formatResult('<pre>⏳ Đang gọi /api/auth/me...</pre>', 'backendResult');
+            
+            try {
+                const response = await fetch('/api/auth/me', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                let html = '<pre>';
+                
+                if (response.ok) {
+                    html += '<span class="success">✓ /api/auth/me hoạt động!</span>\n\n';
+                    html += `User: ${JSON.stringify(data, null, 2)}\n`;
+                } else {
+                    html += `<span class="error">❌ Lỗi ${response.status}</span>\n`;
+                    html += `${JSON.stringify(data, null, 2)}\n`;
+                }
+                
+                html += '</pre>';
+                formatResult(html, 'backendResult');
+                
+            } catch (error) {
+                formatResult(`<pre><span class="error">❌ Lỗi: ${error.message}</span></pre>`, 'backendResult');
+            }
+        }
+        
+        function clearStorage() {
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+            formatResult('<pre><span class="success">✓ Đã xóa tokens khỏi localStorage</span>\nBạn có thể đăng nhập lại.</pre>', 'resetResult');
+        }
+        
+        function fullReset() {
+            localStorage.clear();
+            formatResult('<pre><span class="success">✓ Đã xóa toàn bộ localStorage</span>\n⏳ Đang reload...</pre>', 'resetResult');
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

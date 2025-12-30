@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Ban" ADD COLUMN     "soGhe" INTEGER NOT NULL DEFAULT 4;

@@ -1,0 +1,34 @@
+const router = require('express').Router();
+const authRoutes = require('./auth.routes');
+const ordersRoutes = require('./orders.routes');
+const voidRequestsRoutes = require('./voidRequests.routes');
+const tablesRoutes = require('./tables.routes');
+const kdsRoutes = require('./kds.routes');
+const billingRoutes = require('./billing.routes');
+const menuRoutes = require('./menu.routes');
+const inventoryRoutes = require('./inventory.routes');
+const purchaseRoutes = require('./purchase.routes');
+const customersRoutes = require('./customers.routes');
+const reservationsRoutes = require('./reservations.routes');
+const hrRoutes = require('./hr.routes');
+const reportsRoutes = require('./reports.routes');
+const adminRoutes = require('./admin.routes');
+const debugRoutes = require('./debug.routes');
+
+router.use('/auth', authRoutes);
+router.use('/orders', ordersRoutes);
+router.use('/void-requests', voidRequestsRoutes);
+router.use('/tables', tablesRoutes);
+router.use('/kds', kdsRoutes);
+router.use('/billing', billingRoutes);
+router.use('/menu', menuRoutes);
+router.use('/inventory', inventoryRoutes);
+router.use('/purchase', purchaseRoutes);
+router.use('/customers', customersRoutes);
+router.use('/reservations', reservationsRoutes);
+router.use('/hr', hrRoutes);
+router.use('/reports', reportsRoutes);
+router.use('/admin', adminRoutes);
+router.use('/debug', debugRoutes);
+
+module.exports = router;
