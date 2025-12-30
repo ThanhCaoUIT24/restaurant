@@ -521,7 +521,9 @@ export default function TableMapEditor() {
       setDeleteConfirm({ open: false, type: null, id: null });
       setSelectedTableId(null);
     } catch (error) {
-      setSnackbar({ open: true, message: 'Lỗi xóa bàn', severity: 'error' });
+      const errorMessage = error?.response?.data?.message || error?.message || 'Lỗi xóa bàn';
+      setSnackbar({ open: true, message: errorMessage, severity: 'error' });
+      setDeleteConfirm({ open: false, type: null, id: null });
     }
   };
 

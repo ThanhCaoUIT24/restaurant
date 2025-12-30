@@ -75,8 +75,9 @@ const DRAWER_WIDTH_COLLAPSED = 80;
 const menuItems = [
   {
     title: 'Tổng quan',
+    excludeRoles: ['ThuKho', 'Bep', 'PhucVu'],
     items: [
-      { title: 'Dashboard', icon: <Dashboard />, path: '/' },
+      { title: 'Dashboard', icon: <Dashboard />, path: '/', excludeRoles: ['ThuKho', 'Bep', 'PhucVu'] },
     ],
   },
   {
@@ -92,6 +93,7 @@ const menuItems = [
   },
   {
     title: 'Quản lý',
+    excludeRoles: ['Bep', 'PhucVu', 'ThuNgan'],
     items: [
       { title: 'Yêu cầu hủy món', icon: <Cancel />, path: '/manager/void-requests', permission: PERMISSIONS.ORDER_VOID_APPROVE },
       {
@@ -137,6 +139,7 @@ const menuItems = [
   },
   {
     title: 'Khách hàng',
+    excludeRoles: ['ThuKho', 'Bep', 'PhucVu', 'ThuNgan'],
     items: [
       { title: 'Khách hàng', icon: <Group />, path: '/customers', permission: PERMISSIONS.CUSTOMER_MANAGE },
       { title: 'Tích điểm', icon: <CardGiftcard />, path: '/loyalty', permission: PERMISSIONS.CUSTOMER_MANAGE },
@@ -144,12 +147,14 @@ const menuItems = [
   },
   {
     title: 'Báo cáo',
+    excludeRoles: ['ThuKho', 'Bep', 'PhucVu', 'ThuNgan'],
     items: [
       { title: 'Báo cáo', icon: <Assessment />, path: '/reports', permission: PERMISSIONS.REPORT_VIEW },
     ],
   },
   {
     title: 'Hệ thống',
+    excludeRoles: ['ThuKho', 'Bep', 'PhucVu', 'ThuNgan'],
     items: [
       {
         title: 'Quản trị',
@@ -219,7 +224,7 @@ const Logo = ({ collapsed }) => (
 const NavItem = ({ item, collapsed, depth = 0 }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { hasPermission, isAdmin } = usePermissions();
+  const { hasPermission, isAdmin, hasAnyRole } = usePermissions();
   const [open, setOpen] = useState(false);
   const hasChildren = item.children && item.children.length > 0;
   const isActive = item.path === location.pathname || (hasChildren && item.children.some((child) => child.path === location.pathname));
@@ -237,11 +242,17 @@ const NavItem = ({ item, collapsed, depth = 0 }) => {
     return null;
   }
 
+  // Check excludeRoles - hide item from specific roles
+  if (item.excludeRoles && item.excludeRoles.length > 0 && hasAnyRole(item.excludeRoles)) {
+    return null;
+  }
+
   // Filter children based on permissions
   const visibleChildren = hasChildren
     ? item.children.filter(child => {
       if (child.adminOnly && !isAdmin()) return false;
       if (child.permission && !hasPermission(child.permission)) return false;
+      if (child.excludeRoles && child.excludeRoles.length > 0 && hasAnyRole(child.excludeRoles)) return false;
       return true;
     })
     : [];
@@ -381,9 +392,17 @@ const MainLayout = ({ title = 'Dashboard', children }) => {
           ...menuItems,
         ] : menuItems;
 
+        // Filter sections based on excludeRoles
+        const filteredSections = menuSections.filter(section => {
+          if (section.excludeRoles && section.excludeRoles.length > 0) {
+            return !section.excludeRoles.some(role => (user?.roles || []).includes(role));
+          }
+          return true;
+        });
+
         return (
           <Box sx={{ flex: 1, overflow: 'auto', py: 2 }}>
-            {menuSections.map((section, index) => (
+            {filteredSections.map((section, index) => (
               <Box key={index} sx={{ mb: 2 }}>
                 {!collapsed && (
                   <Typography

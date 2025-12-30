@@ -179,13 +179,13 @@ model Ban {
 
 model DonHang {
   id           String      @id @default(uuid())
-  banId        String
+  banId        String?
   nhanVienId   String?
   trangThai    String? // open/closed etc
   ghiChu       String?
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
-  ban          Ban         @relation(fields: [banId], references: [id])
+  ban          Ban?        @relation(fields: [banId], references: [id], onDelete: SetNull)
   nhanVien     NhanVien?   @relation(fields: [nhanVienId], references: [id], onDelete: SetNull)
   chiTiet      ChiTietDonHang[]
   hoaDon       HoaDon[]

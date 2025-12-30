@@ -378,6 +378,10 @@ const ItemCard = ({ item, ticketId, elapsedSeconds, onStatusChange, isNew }) => 
             <Stack direction="row" spacing={1}>
               {Object.entries(STATUS_CONFIG).filter(([key]) => key !== 'CHOXULY').map(([key, config]) => {
                 const isActive = item.trangThai === key;
+                // DAPHUCVU button only enabled when item is HOANTHANH
+                const canClickDaPhucVu = key === 'DAPHUCVU' && item.trangThai !== 'HOANTHANH';
+                const isDisabled = canClickDaPhucVu;
+
                 return (
                   <Button
                     key={key}
@@ -385,6 +389,7 @@ const ItemCard = ({ item, ticketId, elapsedSeconds, onStatusChange, isNew }) => 
                     variant={isActive ? 'contained' : 'outlined'}
                     startIcon={config.icon}
                     onClick={() => onStatusChange(item.id, key)}
+                    disabled={isDisabled}
                     sx={{
                       flex: 1,
                       py: 1,
@@ -393,13 +398,19 @@ const ItemCard = ({ item, ticketId, elapsedSeconds, onStatusChange, isNew }) => 
                       fontWeight: 700,
                       fontSize: '0.8rem',
                       bgcolor: isActive ? config.color : 'transparent',
-                      borderColor: config.color,
-                      color: isActive ? '#fff' : config.color,
+                      borderColor: isDisabled ? alpha(config.color, 0.3) : config.color,
+                      color: isActive ? '#fff' : (isDisabled ? alpha(config.color, 0.4) : config.color),
                       boxShadow: isActive ? `0 4px 12px ${alpha(config.color, 0.4)}` : 'none',
+                      opacity: isDisabled ? 0.5 : 1,
+                      cursor: isDisabled ? 'not-allowed' : 'pointer',
                       '&:hover': {
                         bgcolor: isActive ? config.color : alpha(config.color, 0.15),
                         borderColor: config.color,
-                        transform: 'translateY(-1px)',
+                        transform: isDisabled ? 'none' : 'translateY(-1px)',
+                      },
+                      '&.Mui-disabled': {
+                        borderColor: alpha(config.color, 0.3),
+                        color: alpha(config.color, 0.4),
                       },
                       '& .MuiButton-startIcon': {
                         marginRight: 0.5,

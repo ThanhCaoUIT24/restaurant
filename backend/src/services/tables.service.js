@@ -107,37 +107,13 @@ const remove = async (id) => {
     throw Object.assign(new Error('Không thể xóa bàn đang có khách'), { status: 400 });
   }
 
-  // Check if table has OPEN orders only (allow deletion if orders are closed/completed)
-  const openOrdersCount = await prisma.donHang.count({
-    where: {
-      banId: id,
-      trangThai: 'open'  // Only check open orders
-    },
-  });
-  if (openOrdersCount > 0) {
-    throw Object.assign(new Error('Không thể xóa bàn đang có đơn hàng mở'), { status: 400 });
-  }
-
-  // Check if table has FUTURE reservations (not past ones)
-  const now = new Date();
-  const futureReservationsCount = await prisma.datBan.count({
-    where: {
-      banId: id,
-      thoiGianDen: {
-        gte: now  // Only check future reservations
-      }
-    },
-  });
-  if (futureReservationsCount > 0) {
-    throw Object.assign(new Error('Không thể xóa bàn đang có đặt bàn trong tương lai'), { status: 400 });
-  }
-
-  // Delete old closed orders before deleting table (banId is required, cannot set to null)
-  await prisma.donHang.deleteMany({
-    where: { banId: id }
+  // Disconnect orders from table (keep history) - set banId = null
+  await prisma.donHang.updateMany({
+    where: { banId: id },
+    data: { banId: null }
   });
 
-  // Disconnect past reservations (banId is optional in DatBan)
+  // Disconnect reservations (banId is optional in DatBan)
   await prisma.datBan.updateMany({
     where: { banId: id },
     data: { banId: null }
