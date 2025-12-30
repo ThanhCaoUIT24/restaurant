@@ -164,6 +164,11 @@ const createDish = async (payload) => {
     throw Object.assign(new Error('Giá bán phải là số >= 0'), { status: 400 });
   }
 
+  // Validate recipe quantities
+  if (congThuc.some(ct => Number(ct.soLuong) < 0)) {
+    throw Object.assign(new Error('Số lượng nguyên liệu không được âm'), { status: 400 });
+  }
+
   const dish = await prisma.$transaction(async (tx) => {
     const newDish = await tx.monAn.create({
       data: {
@@ -183,7 +188,7 @@ const createDish = async (payload) => {
         data: congThuc.map((ct) => ({
           monAnId: newDish.id,
           nguyenVatLieuId: ct.nguyenVatLieuId,
-          soLuong: ct.soLuong,
+          soLuong: Math.max(0, Number(ct.soLuong)),
         })),
       });
     }
@@ -200,6 +205,11 @@ const updateDish = async (id, payload) => {
   // Validation: giaBan must be >= 0 if provided
   if (giaBan !== undefined && (typeof giaBan !== 'number' || giaBan < 0)) {
     throw Object.assign(new Error('Giá bán phải là số >= 0'), { status: 400 });
+  }
+
+  // Validate recipe quantities
+  if (congThuc && congThuc.some(ct => Number(ct.soLuong) < 0)) {
+    throw Object.assign(new Error('Số lượng nguyên liệu không được âm'), { status: 400 });
   }
 
   const existing = await prisma.monAn.findUnique({ where: { id } });
@@ -227,7 +237,7 @@ const updateDish = async (id, payload) => {
           data: congThuc.map((ct) => ({
             monAnId: id,
             nguyenVatLieuId: ct.nguyenVatLieuId,
-            soLuong: ct.soLuong,
+            soLuong: Math.max(0, Number(ct.soLuong)),
           })),
         });
       }

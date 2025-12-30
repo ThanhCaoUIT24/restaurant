@@ -13,7 +13,6 @@ import CashierShift from '../pages/billing/CashierShift';
 import Categories from '../pages/menu/Categories';
 import Dishes from '../pages/menu/Dishes';
 import InventoryView from '../pages/inventory/InventoryView';
-import Materials from '../pages/inventory/Materials';
 import Alerts from '../pages/inventory/Alerts';
 import PurchaseOrders from '../pages/purchase/PurchaseOrders';
 import Receipts from '../pages/purchase/Receipts';
@@ -103,7 +102,6 @@ const routes = [
         element: <RequirePermission permissions={['STOCK_VIEW']} />,
         children: [
           { path: '/inventory', element: <InventoryView /> },
-          { path: '/inventory/materials', element: <Materials /> },
           { path: '/inventory/alerts', element: <Alerts /> },
           { path: '/stock/adjustments', element: <Adjustments /> },
         ],
@@ -114,8 +112,15 @@ const routes = [
         element: <RequirePermission permissions={['PO_VIEW']} />,
         children: [
           { path: '/purchase/orders', element: <PurchaseOrders /> },
-          { path: '/purchase/receipts', element: <Receipts /> },
           { path: '/purchase/suppliers', element: <Suppliers /> },
+        ],
+      },
+
+      // Receipts - requires STOCK_IMPORT permission (ThuKho, Admin only)
+      {
+        element: <RequirePermission permissions={['STOCK_IMPORT']} />,
+        children: [
+          { path: '/purchase/receipts', element: <Receipts /> },
         ],
       },
 

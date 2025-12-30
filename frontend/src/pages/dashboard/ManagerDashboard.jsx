@@ -74,7 +74,7 @@ import { PERMISSIONS } from '../../utils/permissions';
 // ============================================
 // 🎨 PREMIUM COLOR SYSTEM - SaaS Enterprise Style
 // ============================================
-const DASHBOARD_COLORS = {
+const BASE_COLORS = {
   // Primary colors - Soft blue
   primary: {
     main: '#0EA5E9',
@@ -114,18 +114,24 @@ const DASHBOARD_COLORS = {
     dark: '#DC2626',
     gradient: 'linear-gradient(135deg, #EF4444 0%, #F97316 100%)',
   },
-  // Background
-  background: {
-    main: '#F7F9FC',
-    paper: '#FFFFFF',
-    subtle: '#F1F5F9',
-  },
-  // Text
-  text: {
-    primary: '#1E293B',
-    secondary: '#64748B',
-    muted: '#94A3B8',
-  },
+};
+
+const useDashboardColors = () => {
+  const theme = useTheme();
+  return useMemo(() => ({
+    ...BASE_COLORS,
+    background: {
+      main: theme.palette.background.default,
+      paper: theme.palette.background.paper,
+      subtle: theme.palette.background.neutral || theme.palette.action.hover,
+    },
+    text: {
+      primary: theme.palette.text.primary,
+      secondary: theme.palette.text.secondary,
+      muted: theme.palette.text.disabled,
+    },
+    isDark: theme.palette.mode === 'dark',
+  }), [theme]);
 };
 
 // ============================================
@@ -157,7 +163,7 @@ const floatAnimation = {
 // 📊 PREMIUM KPI CARD - Floating Card Style
 // ============================================
 const KPICard = ({ title, value, subtitle, icon: Icon, gradient, trend, trendValue, trendLabel, isLoading, onClick }) => {
-  const theme = useTheme();
+  const colors = useDashboardColors();
 
   return (
     <Card
@@ -175,11 +181,11 @@ const KPICard = ({ title, value, subtitle, icon: Icon, gradient, trend, trendVal
         position: 'relative',
         overflow: 'visible',
         cursor: onClick ? 'pointer' : 'default',
-        bgcolor: '#FFFFFF',
+        bgcolor: colors.background.paper,
         borderRadius: '20px',
         border: '1px solid',
-        borderColor: alpha('#000', 0.04),
-        boxShadow: '0 4px 24px rgba(0,0,0,0.04)',
+        borderColor: alpha(colors.text.primary, 0.05),
+        boxShadow: colors.isDark ? 'none' : '0 4px 24px rgba(0,0,0,0.04)',
         transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
       }}
     >
@@ -197,7 +203,7 @@ const KPICard = ({ title, value, subtitle, icon: Icon, gradient, trend, trendVal
                 <Typography
                   variant="body2"
                   sx={{
-                    color: DASHBOARD_COLORS.text.secondary,
+                    color: colors.text.secondary,
                     fontWeight: 500,
                     fontSize: '0.85rem',
                     letterSpacing: '0.02em',
@@ -212,7 +218,7 @@ const KPICard = ({ title, value, subtitle, icon: Icon, gradient, trend, trendVal
                     fontWeight: 800,
                     fontSize: '2rem',
                     letterSpacing: '-0.02em',
-                    color: DASHBOARD_COLORS.text.primary,
+                    color: colors.text.primary,
                   }}
                 >
                   {value}
@@ -223,7 +229,7 @@ const KPICard = ({ title, value, subtitle, icon: Icon, gradient, trend, trendVal
                     sx={{
                       mt: 0.5,
                       display: 'block',
-                      color: DASHBOARD_COLORS.text.muted,
+                      color: colors.text.muted,
                       fontSize: '0.75rem',
                     }}
                   >
@@ -244,9 +250,9 @@ const KPICard = ({ title, value, subtitle, icon: Icon, gradient, trend, trendVal
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  boxShadow: `0 12px 24px ${alpha(gradient?.includes('#0EA5E9') ? DASHBOARD_COLORS.primary.main :
-                    gradient?.includes('#22C55E') ? DASHBOARD_COLORS.secondary.main :
-                      gradient?.includes('#F59E0B') ? DASHBOARD_COLORS.warning.main : DASHBOARD_COLORS.accent.main, 0.3)}`,
+                  boxShadow: `0 12px 24px ${alpha(gradient?.includes('#0EA5E9') ? colors.primary.main :
+                    gradient?.includes('#22C55E') ? colors.secondary.main :
+                      gradient?.includes('#F59E0B') ? colors.warning.main : colors.accent.main, 0.3)}`,
                   position: 'relative',
                   '&::after': {
                     content: '""',
@@ -282,21 +288,21 @@ const KPICard = ({ title, value, subtitle, icon: Icon, gradient, trend, trendVal
                     fontWeight: 700,
                     fontSize: '0.75rem',
                     bgcolor: trend === 'up'
-                      ? alpha(DASHBOARD_COLORS.secondary.main, 0.1)
+                      ? alpha(colors.secondary.main, 0.1)
                       : trend === 'down'
-                        ? alpha(DASHBOARD_COLORS.danger.main, 0.1)
-                        : alpha(DASHBOARD_COLORS.text.muted, 0.1),
+                        ? alpha(colors.danger.main, 0.1)
+                        : alpha(colors.text.muted, 0.1),
                     color: trend === 'up'
-                      ? DASHBOARD_COLORS.secondary.main
+                      ? colors.secondary.main
                       : trend === 'down'
-                        ? DASHBOARD_COLORS.danger.main
-                        : DASHBOARD_COLORS.text.secondary,
+                        ? colors.danger.main
+                        : colors.text.secondary,
                     '& .MuiChip-icon': {
                       color: 'inherit',
                     },
                   }}
                 />
-                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                <Typography variant="caption" sx={{ color: colors.text.secondary, fontSize: '0.75rem' }}>
                   {trendLabel || 'so với hôm qua'}
                 </Typography>
               </Box>
@@ -312,17 +318,18 @@ const KPICard = ({ title, value, subtitle, icon: Icon, gradient, trend, trendVal
 // 📈 PREMIUM CHART CARD
 // ============================================
 const ChartCard = ({ title, subtitle, icon: Icon, action, children, isLoading, minHeight = 'auto' }) => {
+  const colors = useDashboardColors();
   return (
     <Card
       component={motion.div}
       variants={itemVariants}
       sx={{
         height: '100%',
-        bgcolor: '#FFFFFF',
+        bgcolor: colors.background.paper,
         borderRadius: '20px',
         border: '1px solid',
-        borderColor: alpha('#000', 0.04),
-        boxShadow: '0 4px 24px rgba(0,0,0,0.04)',
+        borderColor: alpha(colors.text.primary, 0.05),
+        boxShadow: colors.isDark ? 'none' : '0 4px 24px rgba(0,0,0,0.04)',
         overflow: 'hidden',
       }}
     >
@@ -336,22 +343,22 @@ const ChartCard = ({ title, subtitle, icon: Icon, action, children, isLoading, m
                   width: 44,
                   height: 44,
                   borderRadius: '12px',
-                  background: DASHBOARD_COLORS.primary.gradient,
+                  background: colors.primary.gradient,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  boxShadow: `0 8px 16px ${DASHBOARD_COLORS.primary.glow}`,
+                  boxShadow: `0 8px 16px ${colors.primary.glow}`,
                 }}
               >
                 <Icon sx={{ fontSize: 22, color: 'white' }} />
               </Box>
             )}
             <Box>
-              <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.1rem', color: DASHBOARD_COLORS.text.primary }}>
+              <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.1rem', color: colors.text.primary }}>
                 {title}
               </Typography>
               {subtitle && (
-                <Typography variant="caption" sx={{ color: DASHBOARD_COLORS.text.muted, fontSize: '0.8rem' }}>
+                <Typography variant="caption" sx={{ color: colors.text.muted, fontSize: '0.8rem' }}>
                   {subtitle}
                 </Typography>
               )}
@@ -371,7 +378,8 @@ const ChartCard = ({ title, subtitle, icon: Icon, action, children, isLoading, m
 // ⭐ BEST SELLER ITEM - Enhanced with image
 // ============================================
 const BestSellerItem = ({ item, index, dishName, dishImage, price, profit, soldCount }) => {
-  const rankColors = ['#FFD700', '#C0C0C0', '#CD7F32', '#94A3B8', '#94A3B8'];
+  const colors = useDashboardColors();
+  const rankColors = ['#FFD700', '#C0C0C0', '#CD7F32', colors.text.muted, colors.text.muted];
   const badges = ['Hot', 'Trending ↑', 'Popular', '', ''];
 
   return (
@@ -393,7 +401,7 @@ const BestSellerItem = ({ item, index, dishName, dishImage, price, profit, soldC
         cursor: 'pointer',
         transition: 'all 0.2s',
         '&:hover': {
-          bgcolor: alpha(DASHBOARD_COLORS.primary.main, 0.04),
+          bgcolor: alpha(colors.primary.main, 0.04),
         },
       }}
     >
@@ -405,7 +413,7 @@ const BestSellerItem = ({ item, index, dishName, dishImage, price, profit, soldC
           borderRadius: '10px',
           background: index < 3
             ? `linear-gradient(135deg, ${rankColors[index]} 0%, ${alpha(rankColors[index], 0.7)} 100%)`
-            : alpha('#94A3B8', 0.15),
+            : alpha(colors.text.muted, 0.15),
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -429,11 +437,11 @@ const BestSellerItem = ({ item, index, dishName, dishImage, price, profit, soldC
           width: 52,
           height: 52,
           borderRadius: '12px',
-          bgcolor: alpha(DASHBOARD_COLORS.primary.main, 0.1),
+          bgcolor: alpha(colors.primary.main, 0.1),
           boxShadow: '0 4px 12px rgba(0,0,0,0.06)',
         }}
       >
-        <LocalDining sx={{ color: DASHBOARD_COLORS.primary.main }} />
+        <LocalDining sx={{ color: colors.primary.main }} />
       </Avatar>
 
       {/* Info */}
@@ -443,7 +451,7 @@ const BestSellerItem = ({ item, index, dishName, dishImage, price, profit, soldC
           sx={{
             fontWeight: 600,
             fontSize: '0.9rem',
-            color: DASHBOARD_COLORS.text.primary,
+            color: colors.text.primary,
             whiteSpace: 'nowrap',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
@@ -452,11 +460,11 @@ const BestSellerItem = ({ item, index, dishName, dishImage, price, profit, soldC
           {dishName || item?.ten || `Món #${item?.monAnId?.slice(0, 8)}`}
         </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mt: 0.5 }}>
-          <Typography variant="caption" sx={{ color: DASHBOARD_COLORS.secondary.main, fontWeight: 600 }}>
+          <Typography variant="caption" sx={{ color: colors.secondary.main, fontWeight: 600 }}>
             {(price ?? item?.giaBan ?? '---')}₫
           </Typography>
-          <FiberManualRecord sx={{ fontSize: 4, color: DASHBOARD_COLORS.text.muted }} />
-          <Typography variant="caption" sx={{ color: DASHBOARD_COLORS.text.muted }}>
+          <FiberManualRecord sx={{ fontSize: 4, color: colors.text.muted }} />
+          <Typography variant="caption" sx={{ color: colors.text.muted }}>
             Đã bán: <strong>{soldCount || item?._sum?.soLuong || 0}</strong>
           </Typography>
         </Box>
@@ -475,10 +483,10 @@ const BestSellerItem = ({ item, index, dishName, dishImage, price, profit, soldC
             fontWeight: 600,
             fontSize: '0.7rem',
             background: index === 0
-              ? DASHBOARD_COLORS.danger.gradient
+              ? colors.danger.gradient
               : index === 1
-                ? DASHBOARD_COLORS.secondary.gradient
-                : DASHBOARD_COLORS.primary.gradient,
+                ? colors.secondary.gradient
+                : colors.primary.gradient,
             color: 'white',
             '& .MuiChip-icon': { color: 'white' },
           }}
@@ -492,6 +500,7 @@ const BestSellerItem = ({ item, index, dishName, dishImage, price, profit, soldC
 // ⚠️ STOCK ALERT ITEM - Enhanced visual
 // ============================================
 const StockAlertItem = ({ item, index }) => {
+  const colors = useDashboardColors();
   const percentage = (item.soLuongTon / item.mucTonToiThieu) * 100;
   const isUrgent = percentage < 30;
   const daysRemaining = Math.ceil(item.soLuongTon / 2); // Estimate consumption rate
@@ -507,12 +516,12 @@ const StockAlertItem = ({ item, index }) => {
         mb: 1.5,
         borderRadius: '14px',
         bgcolor: isUrgent
-          ? alpha(DASHBOARD_COLORS.danger.main, 0.06)
-          : alpha(DASHBOARD_COLORS.warning.main, 0.06),
+          ? alpha(colors.danger.main, 0.06)
+          : alpha(colors.warning.main, 0.06),
         border: '1px solid',
         borderColor: isUrgent
-          ? alpha(DASHBOARD_COLORS.danger.main, 0.15)
-          : alpha(DASHBOARD_COLORS.warning.main, 0.15),
+          ? alpha(colors.danger.main, 0.15)
+          : alpha(colors.warning.main, 0.15),
         transition: 'all 0.2s',
         '&:hover': {
           transform: 'translateX(4px)',
@@ -526,11 +535,11 @@ const StockAlertItem = ({ item, index }) => {
             width: 44,
             height: 44,
             borderRadius: '12px',
-            bgcolor: isUrgent ? DASHBOARD_COLORS.danger.main : DASHBOARD_COLORS.warning.main,
+            bgcolor: isUrgent ? colors.danger.main : colors.warning.main,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: `0 6px 16px ${alpha(isUrgent ? DASHBOARD_COLORS.danger.main : DASHBOARD_COLORS.warning.main, 0.3)}`,
+            boxShadow: `0 6px 16px ${alpha(isUrgent ? colors.danger.main : colors.warning.main, 0.3)}`,
           }}
         >
           <Warning sx={{ fontSize: 22, color: 'white' }} />
@@ -538,7 +547,7 @@ const StockAlertItem = ({ item, index }) => {
 
         {/* Info */}
         <Box sx={{ flex: 1 }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 600, color: DASHBOARD_COLORS.text.primary, fontSize: '0.95rem' }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, color: colors.text.primary, fontSize: '0.95rem' }}>
             {item.ten}
           </Typography>
 
@@ -547,14 +556,14 @@ const StockAlertItem = ({ item, index }) => {
               <Typography
                 variant="caption"
                 sx={{
-                  color: isUrgent ? DASHBOARD_COLORS.danger.main : DASHBOARD_COLORS.warning.main,
+                  color: isUrgent ? colors.danger.main : colors.warning.main,
                   fontWeight: 700,
                   fontSize: '0.8rem',
                 }}
               >
                 Còn: {item.soLuongTon} {item.donViTinh}
               </Typography>
-              <Typography variant="caption" sx={{ color: DASHBOARD_COLORS.text.muted }}>
+              <Typography variant="caption" sx={{ color: colors.text.muted }}>
                 Tối thiểu: {item.mucTonToiThieu}
               </Typography>
             </Box>
@@ -565,17 +574,17 @@ const StockAlertItem = ({ item, index }) => {
               sx={{
                 height: 8,
                 borderRadius: 4,
-                bgcolor: alpha(isUrgent ? DASHBOARD_COLORS.danger.main : DASHBOARD_COLORS.warning.main, 0.12),
+                bgcolor: alpha(isUrgent ? colors.danger.main : colors.warning.main, 0.12),
                 '& .MuiLinearProgress-bar': {
                   borderRadius: 4,
-                  background: isUrgent ? DASHBOARD_COLORS.danger.gradient : DASHBOARD_COLORS.warning.gradient,
+                  background: isUrgent ? colors.danger.gradient : colors.warning.gradient,
                 },
               }}
             />
 
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
-              <Timer sx={{ fontSize: 14, color: DASHBOARD_COLORS.text.muted }} />
-              <Typography variant="caption" sx={{ color: DASHBOARD_COLORS.text.muted }}>
+              <Timer sx={{ fontSize: 14, color: colors.text.muted }} />
+              <Typography variant="caption" sx={{ color: colors.text.muted }}>
                 Dự kiến hết trong ~{daysRemaining} ngày
               </Typography>
             </Box>
@@ -590,14 +599,15 @@ const StockAlertItem = ({ item, index }) => {
 // 👨‍🍳 ACTIVITY FEED ITEM
 // ============================================
 const ActivityItem = ({ type, title, time, user, icon: Icon, color }) => {
+  const colors = useDashboardColors();
   const typeMap = {
-    order: { Icon: ShoppingCart, color: DASHBOARD_COLORS.primary.main },
-    payment: { Icon: AttachMoney, color: DASHBOARD_COLORS.secondary.main },
-    cancel: { Icon: Warning, color: DASHBOARD_COLORS.warning.main },
-    checkin: { Icon: Person, color: DASHBOARD_COLORS.accent.main },
-    checkout: { Icon: Person, color: DASHBOARD_COLORS.accent.main },
-    inventory: { Icon: Inventory, color: DASHBOARD_COLORS.warning.main },
-    system: { Icon: Timeline, color: DASHBOARD_COLORS.text.muted },
+    order: { Icon: ShoppingCart, color: colors.primary.main },
+    payment: { Icon: AttachMoney, color: colors.secondary.main },
+    cancel: { Icon: Warning, color: colors.warning.main },
+    checkin: { Icon: Person, color: colors.accent.main },
+    checkout: { Icon: Person, color: colors.accent.main },
+    inventory: { Icon: Inventory, color: colors.warning.main },
+    system: { Icon: Timeline, color: colors.text.muted },
   };
   const resolved = Icon && color ? { Icon, color } : (typeMap[type] || typeMap.system);
   const ResolvedIcon = resolved.Icon;
@@ -614,7 +624,7 @@ const ActivityItem = ({ type, title, time, user, icon: Icon, color }) => {
         gap: 1.5,
         py: 1.5,
         borderBottom: '1px solid',
-        borderColor: alpha('#000', 0.04),
+        borderColor: alpha(colors.text.primary, 0.05),
         '&:last-child': { borderBottom: 'none' },
       }}
     >
@@ -633,17 +643,17 @@ const ActivityItem = ({ type, title, time, user, icon: Icon, color }) => {
         <ResolvedIcon sx={{ fontSize: 18, color: resolvedColor }} />
       </Box>
       <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.85rem', color: DASHBOARD_COLORS.text.primary }}>
+        <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.85rem', color: colors.text.primary }}>
           {title}
         </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.25 }}>
-          <Typography variant="caption" sx={{ color: DASHBOARD_COLORS.text.muted }}>
+          <Typography variant="caption" sx={{ color: colors.text.muted }}>
             {time}
           </Typography>
           {user && (
             <>
-              <FiberManualRecord sx={{ fontSize: 4, color: DASHBOARD_COLORS.text.muted }} />
-              <Typography variant="caption" sx={{ color: DASHBOARD_COLORS.text.secondary }}>
+              <FiberManualRecord sx={{ fontSize: 4, color: colors.text.muted }} />
+              <Typography variant="caption" sx={{ color: colors.text.secondary }}>
                 {user}
               </Typography>
             </>
@@ -657,72 +667,72 @@ const ActivityItem = ({ type, title, time, user, icon: Icon, color }) => {
 // ============================================
 // 👥 SHIFT EMPLOYEE ITEM
 // ============================================
-const ShiftEmployee = ({ name, role, status, avatar, time }) => (
-  <Box
-    sx={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: 1.5,
-      p: 1.5,
-      borderRadius: '12px',
-      bgcolor: alpha(DASHBOARD_COLORS.background.subtle, 0.5),
-      mb: 1,
-    }}
-  >
-    <Badge
-      overlap="circular"
-      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      badgeContent={
-        <FiberManualRecord
-          sx={{
-            fontSize: 12,
-            color: status === 'active' ? DASHBOARD_COLORS.secondary.main :
-              status === 'upcoming' ? DASHBOARD_COLORS.warning.main :
-                DASHBOARD_COLORS.text.muted,
-            bgcolor: 'white',
-            borderRadius: '50%',
-          }}
-        />
-      }
-    >
-      <Avatar
-        src={avatar}
-        sx={{
-          width: 40,
-          height: 40,
-          bgcolor: DASHBOARD_COLORS.primary.main,
-          fontSize: '0.9rem',
-          fontWeight: 600,
-        }}
-      >
-        {name?.charAt(0)}
-      </Avatar>
-    </Badge>
-    <Box sx={{ flex: 1, minWidth: 0 }}>
-      <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>
-        {name}
-      </Typography>
-      <Typography variant="caption" sx={{ color: DASHBOARD_COLORS.text.muted }}>
-        {role}
-      </Typography>
-    </Box>
-    <Chip
-      label={time}
-      size="small"
+const ShiftEmployee = ({ name, role, status, avatar, time }) => {
+  const colors = useDashboardColors();
+  return (
+    <Box
       sx={{
-        height: 24,
-        fontSize: '0.7rem',
-        fontWeight: 600,
-        bgcolor: status === 'active'
-          ? alpha(DASHBOARD_COLORS.secondary.main, 0.1)
-          : alpha(DASHBOARD_COLORS.text.muted, 0.1),
-        color: status === 'active'
-          ? DASHBOARD_COLORS.secondary.main
-          : DASHBOARD_COLORS.text.secondary,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1.5,
+        p: 1.5,
+        borderRadius: '12px',
+        bgcolor: alpha(colors.background.subtle, 0.5),
+        mb: 1,
       }}
-    />
-  </Box>
-);
+    >
+      <Badge
+        overlap="circular"
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        badgeContent={
+          <FiberManualRecord
+            sx={{
+              fontSize: 12,
+              color: status === 'active' ? colors.secondary.main :
+                status === 'upcoming' ? colors.warning.main :
+                  colors.text.muted,
+              bgcolor: 'white',
+              borderRadius: '50%',
+            }}
+          />
+        }
+      >
+        <Avatar
+          src={avatar}
+          sx={{
+            width: 40,
+            height: 40,
+            bgcolor: colors.primary.main,
+            fontSize: '0.9rem',
+            fontWeight: 600,
+          }}
+        >
+          {name?.charAt(0)}
+        </Avatar>
+      </Badge>
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.85rem', color: colors.text.primary }}>
+          {name}
+        </Typography>
+        <Typography variant="caption" sx={{ color: colors.text.muted }}>
+          {role}
+        </Typography>
+      </Box>
+      <Chip
+        label={time}
+        size="small"
+        sx={{
+          height: 24,
+          fontSize: '0.7rem',
+          fontWeight: 600,
+          bgcolor: alpha(colors.background.subtle, 0.5),
+          color: colors.text.secondary,
+        }}
+      />
+    </Box>
+  );
+};
+
 
 // ============================================
 // 🎯 QUICK ACTION BUTTON
@@ -754,45 +764,49 @@ const QuickAction = ({ icon: Icon, label, gradient, onClick }) => (
 // ============================================
 // 📊 TIME RANGE SELECTOR
 // ============================================
-const TimeRangeSelector = ({ value, onChange }) => (
-  <ButtonGroup size="small" sx={{ bgcolor: DASHBOARD_COLORS.background.subtle, borderRadius: '10px', p: 0.5 }}>
-    {['Tuần', 'Tháng', 'Năm'].map((label, idx) => (
-      <Button
-        key={label}
-        onClick={() => onChange(idx)}
-        sx={{
-          px: 2.5,
-          py: 0.75,
-          fontWeight: 600,
-          fontSize: '0.8rem',
-          borderRadius: '8px !important',
-          border: 'none !important',
-          ...(value === idx ? {
-            background: DASHBOARD_COLORS.primary.gradient,
-            color: 'white',
-            boxShadow: `0 4px 12px ${DASHBOARD_COLORS.primary.glow}`,
-            '&:hover': {
-              background: DASHBOARD_COLORS.primary.gradient,
-            },
-          } : {
-            bgcolor: 'transparent',
-            color: DASHBOARD_COLORS.text.secondary,
-            '&:hover': {
-              bgcolor: alpha(DASHBOARD_COLORS.primary.main, 0.08),
-            },
-          }),
-        }}
-      >
-        {label}
-      </Button>
-    ))}
-  </ButtonGroup>
-);
+const TimeRangeSelector = ({ value, onChange }) => {
+  const colors = useDashboardColors();
+  return (
+    <ButtonGroup size="small" sx={{ bgcolor: colors.background.subtle, borderRadius: '10px', p: 0.5 }}>
+      {['Tuần', 'Tháng', 'Năm'].map((label, idx) => (
+        <Button
+          key={label}
+          onClick={() => onChange(idx)}
+          sx={{
+            px: 2.5,
+            py: 0.75,
+            fontWeight: 600,
+            fontSize: '0.8rem',
+            borderRadius: '8px !important',
+            border: 'none !important',
+            ...(value === idx ? {
+              background: colors.primary.gradient,
+              color: 'white',
+              boxShadow: `0 4px 12px ${colors.primary.glow}`,
+              '&:hover': {
+                background: colors.primary.gradient,
+              },
+            } : {
+              bgcolor: 'transparent',
+              color: colors.text.secondary,
+              '&:hover': {
+                bgcolor: alpha(colors.primary.main, 0.08),
+              },
+            }),
+          }}
+        >
+          {label}
+        </Button>
+      ))}
+    </ButtonGroup>
+  );
+};
 
 // ============================================
 // 🏠 MAIN DASHBOARD COMPONENT
 // ============================================
 const ManagerDashboard = () => {
+  const colors = useDashboardColors();
   const [timeRange, setTimeRange] = useState(0);
   const rangeParam = useMemo(() => ['week', 'month', 'year'][timeRange] || 'week', [timeRange]);
   const dashboardParams = useMemo(() => ({ range: rangeParam }), [rangeParam]);
@@ -841,10 +855,20 @@ const ManagerDashboard = () => {
       value: (data?.revenue || 0).toLocaleString('vi-VN') + '₫',
       subtitle: `Cập nhật lúc ${currentTime}`,
       icon: MonetizationOn,
-      gradient: DASHBOARD_COLORS.primary.gradient,
+      gradient: colors.primary.gradient,
       trend: data?.trends?.revenue?.trend || 'flat',
       trendValue: data?.trends?.revenue?.value ?? 0,
       onClick: () => navigate('/reports/sales?period=today'),
+      permission: PERMISSIONS.REPORT_VIEW,
+    },
+    {
+      title: 'Lợi nhuận gộp',
+      value: (data?.profit || 0).toLocaleString('vi-VN') + '₫',
+      subtitle: 'Hiệu quả kinh doanh',
+      icon: TrendingUp, // Distinct icon
+      gradient: colors.accent.gradient,
+      trend: data?.trends?.profit?.trend || 'flat',
+      trendValue: data?.trends?.profit?.value ?? 0,
       permission: PERMISSIONS.REPORT_VIEW,
     },
     {
@@ -852,28 +876,19 @@ const ManagerDashboard = () => {
       value: data?.bills || 0,
       subtitle: 'Đơn hàng hoàn thành',
       icon: Receipt,
-      gradient: DASHBOARD_COLORS.secondary.gradient,
+      gradient: colors.secondary.gradient,
       trend: data?.trends?.bills?.trend || 'flat',
       trendValue: data?.trends?.bills?.value ?? 0,
       onClick: () => navigate('/billing'),
       permission: PERMISSIONS.PAYMENT_VIEW,
     },
     {
-      title: 'Giá trị trung bình',
-      value: (data?.avgBill || 0).toLocaleString('vi-VN') + '₫',
-      subtitle: 'Mỗi hóa đơn',
-      icon: Analytics,
-      gradient: DASHBOARD_COLORS.warning.gradient,
-      trend: data?.trends?.avgBill?.trend || 'flat',
-      trendValue: data?.trends?.avgBill?.value ?? 0,
-      permission: PERMISSIONS.REPORT_VIEW,
-    },
-    {
       title: 'Khách hàng',
       value: data?.guests || 0,
       subtitle: 'Lượt phục vụ hôm nay',
       icon: Group,
-      gradient: DASHBOARD_COLORS.accent.gradient,
+      // Shift colors since we inserted one. Use warning for consistency or keep existing
+      gradient: colors.warning.gradient,
       trend: data?.trends?.guests?.trend || 'flat',
       trendValue: data?.trends?.guests?.value ?? 0,
       onClick: () => navigate('/customers'),
@@ -904,8 +919,9 @@ const ManagerDashboard = () => {
         easing: 'easeinout',
         speed: 800,
       },
+      foreColor: colors.text.muted,
     },
-    colors: [DASHBOARD_COLORS.primary.main],
+    colors: [colors.primary.main],
     fill: {
       type: 'gradient',
       gradient: {
@@ -914,9 +930,9 @@ const ManagerDashboard = () => {
         opacityTo: 0.05,
         stops: [0, 90, 100],
         colorStops: [
-          { offset: 0, color: DASHBOARD_COLORS.primary.main, opacity: 0.4 },
-          { offset: 50, color: DASHBOARD_COLORS.accent.main, opacity: 0.2 },
-          { offset: 100, color: DASHBOARD_COLORS.accent.main, opacity: 0.05 },
+          { offset: 0, color: colors.primary.main, opacity: 0.4 },
+          { offset: 50, color: colors.accent.main, opacity: 0.2 },
+          { offset: 100, color: colors.accent.main, opacity: 0.05 },
         ],
       },
     },
@@ -931,14 +947,15 @@ const ManagerDashboard = () => {
       style: {
         fontSize: '11px',
         fontWeight: 600,
-        colors: [DASHBOARD_COLORS.text.primary],
+        colors: [colors.text.primary],
       },
       background: {
         enabled: true,
         borderRadius: 6,
         padding: 6,
         opacity: 0.95,
-        borderColor: alpha('#000', 0.05),
+        foreColor: colors.background.paper,
+        borderColor: alpha(colors.text.primary, 0.05),
         borderWidth: 1,
       },
       offsetY: -8,
@@ -949,7 +966,7 @@ const ManagerDashboard = () => {
       axisTicks: { show: false },
       labels: {
         style: {
-          colors: DASHBOARD_COLORS.text.muted,
+          colors: colors.text.muted,
           fontSize: '12px',
           fontWeight: 500,
         },
@@ -959,13 +976,13 @@ const ManagerDashboard = () => {
       labels: {
         formatter: (val) => (val / 1000000).toFixed(1) + 'M₫',
         style: {
-          colors: DASHBOARD_COLORS.text.muted,
+          colors: colors.text.muted,
           fontSize: '11px',
         },
       },
     },
     tooltip: {
-      theme: 'light',
+      theme: colors.isDark ? 'dark' : 'light',
       y: {
         formatter: (val) => val.toLocaleString('vi-VN') + '₫',
       },
@@ -975,17 +992,20 @@ const ManagerDashboard = () => {
     },
     grid: {
       strokeDashArray: 4,
-      borderColor: alpha('#000', 0.06),
+      borderColor: alpha(colors.text.primary, 0.06),
       padding: { top: 0, right: 10, bottom: 0, left: 10 },
     },
     markers: {
       size: 5,
-      colors: ['white'],
-      strokeColors: DASHBOARD_COLORS.primary.main,
+      colors: [colors.background.paper],
+      strokeColors: colors.primary.main,
       strokeWidth: 3,
       hover: { size: 8 },
     },
   };
+
+  const categoryLabels = (data?.categoryDistribution || []).map(x => x.name);
+  const categoryChartSeries = (data?.categoryDistribution || []).map(x => x.value);
 
   // Category Donut Chart Config
   const categoryChartOptions = {
@@ -994,12 +1014,13 @@ const ManagerDashboard = () => {
       background: 'transparent',
       fontFamily: 'Inter, sans-serif',
     },
-    colors: [DASHBOARD_COLORS.primary.main, DASHBOARD_COLORS.accent.main, DASHBOARD_COLORS.secondary.main, DASHBOARD_COLORS.warning.main, '#94A3B8'],
-    labels: ['Món chính', 'Đồ uống', 'Tráng miệng', 'Khai vị', 'Khác'],
+    colors: [colors.primary.main, colors.accent.main, colors.secondary.main, colors.warning.main, colors.text.muted],
+    labels: categoryLabels.length > 0 ? categoryLabels : ['Không có số liệu'],
     legend: {
       position: 'bottom',
       fontSize: '13px',
       fontWeight: 500,
+      labels: { colors: colors.text.primary },
       markers: {
         width: 12,
         height: 12,
@@ -1017,37 +1038,36 @@ const ManagerDashboard = () => {
               show: true,
               fontSize: '14px',
               fontWeight: 600,
-              color: DASHBOARD_COLORS.text.primary,
+              color: colors.text.primary,
             },
             value: {
               show: true,
               fontSize: '28px',
               fontWeight: 800,
-              color: DASHBOARD_COLORS.text.primary,
-              formatter: (val) => val,
+              color: colors.text.primary,
+              formatter: (val) => parseFloat(val).toLocaleString('vi-VN'),
             },
             total: {
               show: true,
-              label: 'Tổng đơn',
+              label: 'Tổng doanh thu',
               fontSize: '13px',
               fontWeight: 500,
-              color: DASHBOARD_COLORS.text.muted,
-              formatter: () => data?.bills || 0,
+              color: colors.text.muted,
+              formatter: () => (data?.revenue || 0).toLocaleString('vi-VN'),
             },
           },
         },
       },
     },
-    stroke: { width: 2, colors: ['#fff'] },
+    stroke: { width: 2, colors: [colors.background.paper] },
     dataLabels: { enabled: false },
     tooltip: {
+      theme: colors.isDark ? 'dark' : 'light',
       y: {
-        formatter: (val) => val + ' đơn',
+        formatter: (val) => val.toLocaleString('vi-VN') + '₫',
       },
     },
   };
-
-  const categoryChartSeries = [44, 25, 15, 10, 6];
 
   const activities = (data?.recentActivities || []).map((a) => ({
     ...a,
@@ -1064,7 +1084,7 @@ const ManagerDashboard = () => {
         initial="hidden"
         animate="visible"
         sx={{
-          bgcolor: DASHBOARD_COLORS.background.main,
+          bgcolor: colors.background.main,
           minHeight: '100vh',
           p: { xs: 2, md: 3 },
           mx: -3,
@@ -1091,15 +1111,15 @@ const ManagerDashboard = () => {
               sx={{
                 fontWeight: 800,
                 fontSize: { xs: '1.5rem', md: '1.75rem' },
-                color: DASHBOARD_COLORS.text.primary,
+                color: colors.text.primary,
                 mb: 0.5,
               }}
             >
               {getGreeting()}! 👋
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <CalendarToday sx={{ fontSize: 16, color: DASHBOARD_COLORS.text.muted }} />
-              <Typography variant="body2" sx={{ color: DASHBOARD_COLORS.text.secondary }}>
+              <CalendarToday sx={{ fontSize: 16, color: colors.text.muted }} />
+              <Typography variant="body2" sx={{ color: colors.text.secondary }}>
                 {currentDate}
               </Typography>
             </Box>
@@ -1111,19 +1131,19 @@ const ManagerDashboard = () => {
               <QuickAction
                 icon={TableRestaurant}
                 label="Sơ đồ bàn"
-                gradient={DASHBOARD_COLORS.primary.gradient}
+                gradient={colors.primary.gradient}
                 onClick={() => navigate('/pos')}
               />
               <QuickAction
                 icon={Add}
                 label="Tạo đơn mới"
-                gradient={DASHBOARD_COLORS.secondary.gradient}
+                gradient={colors.secondary.gradient}
                 onClick={() => navigate('/pos/order')}
               />
               <QuickAction
                 icon={Receipt}
                 label="Thanh toán"
-                gradient={DASHBOARD_COLORS.warning.gradient}
+                gradient={colors.warning.gradient}
                 onClick={() => navigate('/billing')}
               />
             </Box>
@@ -1136,14 +1156,14 @@ const ManagerDashboard = () => {
                 sx={{
                   width: 44,
                   height: 44,
-                  bgcolor: 'white',
+                  bgcolor: colors.background.paper,
                   borderRadius: '12px',
                   border: '1px solid',
-                  borderColor: alpha('#000', 0.06),
-                  '&:hover': { bgcolor: alpha(DASHBOARD_COLORS.primary.main, 0.08) },
+                  borderColor: alpha(colors.text.primary, 0.06),
+                  '&:hover': { bgcolor: alpha(colors.primary.main, 0.08) },
                 }}
               >
-                <Refresh sx={{ color: DASHBOARD_COLORS.text.secondary }} />
+                <Refresh sx={{ color: colors.text.secondary }} />
               </IconButton>
             </Tooltip>
           </Box>
@@ -1192,7 +1212,7 @@ const ManagerDashboard = () => {
             <Grid item xs={12} lg={4}>
               <ChartCard
                 title="Phân bố theo danh mục"
-                subtitle="Tỷ lệ đơn hàng theo loại"
+                subtitle="Tỷ trọng doanh thu theo danh mục"
                 icon={DonutLarge}
               >
                 {isLoading ? (
@@ -1231,12 +1251,12 @@ const ManagerDashboard = () => {
                       fontSize: '0.8rem',
                       px: 2,
                       borderRadius: '10px',
-                      background: DASHBOARD_COLORS.primary.gradient,
+                      background: colors.primary.gradient,
                       color: 'white',
-                      boxShadow: `0 4px 12px ${DASHBOARD_COLORS.primary.glow}`,
+                      boxShadow: `0 4px 12px ${colors.primary.glow}`,
                       '&:hover': {
-                        background: DASHBOARD_COLORS.primary.gradient,
-                        boxShadow: `0 6px 16px ${DASHBOARD_COLORS.primary.glow}`,
+                        background: colors.primary.gradient,
+                        boxShadow: `0 6px 16px ${colors.primary.glow}`,
                       },
                     }}
                   >
@@ -1268,13 +1288,13 @@ const ManagerDashboard = () => {
                         mx: 'auto',
                         mb: 2,
                         borderRadius: '20px',
-                        background: alpha(DASHBOARD_COLORS.primary.main, 0.1),
+                        background: alpha(colors.primary.main, 0.1),
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                       }}
                     >
-                      <Restaurant sx={{ fontSize: 40, color: DASHBOARD_COLORS.text.muted }} />
+                      <Restaurant sx={{ fontSize: 40, color: colors.text.muted }} />
                     </Box>
                     <Typography variant="subtitle1" fontWeight={600} gutterBottom>
                       Chưa có dữ liệu
@@ -1305,8 +1325,8 @@ const ManagerDashboard = () => {
                       fontSize: '0.8rem',
                       height: 28,
                       background: (data?.stockAlerts?.length || 0) > 0
-                        ? DASHBOARD_COLORS.danger.gradient
-                        : DASHBOARD_COLORS.secondary.gradient,
+                        ? colors.danger.gradient
+                        : colors.secondary.gradient,
                       color: 'white',
                       '& .MuiChip-icon': { color: 'white' },
                     }}
@@ -1338,13 +1358,13 @@ const ManagerDashboard = () => {
                         mx: 'auto',
                         mb: 2,
                         borderRadius: '50%',
-                        background: alpha(DASHBOARD_COLORS.secondary.main, 0.1),
+                        background: alpha(colors.secondary.main, 0.1),
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                       }}
                     >
-                      <CheckCircle sx={{ fontSize: 40, color: DASHBOARD_COLORS.secondary.main }} />
+                      <CheckCircle sx={{ fontSize: 40, color: colors.secondary.main }} />
                     </Box>
                     <Typography variant="subtitle1" fontWeight={600} gutterBottom>
                       Tuyệt vời! 🎉

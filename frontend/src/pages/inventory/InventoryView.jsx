@@ -66,6 +66,7 @@ import {
   useUpdateMaterial,
   useDeleteMaterial,
 } from '../../hooks/useInventory';
+import { useSuppliers } from '../../hooks/usePurchase';
 
 // ==================== PREMIUM INVENTORY COLORS ====================
 const COLORS = {
@@ -142,12 +143,12 @@ const StatsCard = ({ icon, label, value, color, subValue }) => (
 const MaterialRow = ({ material, onEdit, onDelete, alerts }) => {
   const hasAlert = alerts.some(a => a.nguyenVatLieuId === material.id);
   const isLow = Number(material.soLuongTon) <= Number(material.mucToiThieu);
-  
+
   return (
     <motion.tr
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      style={{ 
+      style={{
         background: isLow ? `${COLORS.errorLight}50` : 'transparent',
       }}
     >
@@ -232,10 +233,10 @@ const MaterialRow = ({ material, onEdit, onDelete, alerts }) => {
       <TableCell align="right">
         <Stack direction="row" spacing={0.5} justifyContent="flex-end">
           <Tooltip title="Chỉnh sửa">
-            <IconButton 
-              size="small" 
+            <IconButton
+              size="small"
               onClick={() => onEdit(material)}
-              sx={{ 
+              sx={{
                 background: `${COLORS.info}10`,
                 '&:hover': { background: `${COLORS.info}20` },
               }}
@@ -244,10 +245,10 @@ const MaterialRow = ({ material, onEdit, onDelete, alerts }) => {
             </IconButton>
           </Tooltip>
           <Tooltip title="Xóa">
-            <IconButton 
-              size="small" 
+            <IconButton
+              size="small"
               onClick={() => onDelete(material)}
-              sx={{ 
+              sx={{
                 background: `${COLORS.error}10`,
                 '&:hover': { background: `${COLORS.error}20` },
               }}
@@ -265,6 +266,7 @@ const MaterialRow = ({ material, onEdit, onDelete, alerts }) => {
 const InventoryView = () => {
   const { data: materials = [], isLoading, refetch } = useMaterials();
   const { data: alerts = [] } = useInventoryAlerts();
+  const { data: suppliers = [] } = useSuppliers();
   const createMaterial = useCreateMaterial();
   const updateMaterial = useUpdateMaterial();
   const deleteMaterial = useDeleteMaterial();
@@ -275,7 +277,7 @@ const InventoryView = () => {
   const [stockFilter, setStockFilter] = useState('all');
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc');
-  
+
   // Dialog states
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState(null);
@@ -287,6 +289,7 @@ const InventoryView = () => {
     soLuongTon: 0,
     mucToiThieu: 0,
     giaNhap: 0,
+    nhaCungCapId: '',
   });
 
   // Snackbar
@@ -364,6 +367,7 @@ const InventoryView = () => {
         soLuongTon: material.soLuongTon || 0,
         mucToiThieu: material.mucToiThieu || 0,
         giaNhap: material.giaNhap || 0,
+        nhaCungCapId: material.nhaCungCapId || '',
       });
     } else {
       setEditingMaterial(null);
@@ -374,6 +378,7 @@ const InventoryView = () => {
         soLuongTon: 0,
         mucToiThieu: 0,
         giaNhap: 0,
+        nhaCungCapId: '',
       });
     }
     setDialogOpen(true);
@@ -396,10 +401,10 @@ const InventoryView = () => {
       handleCloseDialog();
       refetch();
     } catch (err) {
-      setSnackbar({ 
-        open: true, 
-        message: `❌ ${err?.response?.data?.message || 'Có lỗi xảy ra'}`, 
-        severity: 'error' 
+      setSnackbar({
+        open: true,
+        message: `❌ ${err?.response?.data?.message || 'Có lỗi xảy ra'}`,
+        severity: 'error'
       });
     }
   };
@@ -412,10 +417,10 @@ const InventoryView = () => {
       setDeleteConfirm(null);
       refetch();
     } catch (err) {
-      setSnackbar({ 
-        open: true, 
-        message: `❌ ${err?.response?.data?.message || 'Không thể xóa'}`, 
-        severity: 'error' 
+      setSnackbar({
+        open: true,
+        message: `❌ ${err?.response?.data?.message || 'Không thể xóa'}`,
+        severity: 'error'
       });
     }
   };
@@ -678,6 +683,22 @@ const InventoryView = () => {
                   endAdornment: <InputAdornment position="end">VNĐ</InputAdornment>,
                 }}
               />
+              <TextField
+                select
+                label="Nhà cung cấp mặc định"
+                value={formData.nhaCungCapId}
+                onChange={(e) => setFormData({ ...formData, nhaCungCapId: e.target.value })}
+                fullWidth
+              >
+                <MenuItem value="">
+                  <em>Không chọn</em>
+                </MenuItem>
+                {suppliers.map((s) => (
+                  <MenuItem key={s.id} value={s.id}>
+                    {s.ten}
+                  </MenuItem>
+                ))}
+              </TextField>
             </Stack>
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 3 }}>

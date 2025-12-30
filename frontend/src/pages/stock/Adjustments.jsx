@@ -30,7 +30,8 @@ import {
 import { getAdjustmentOrder } from '../../api/inventory.api';
 
 const ADJUSTMENT_TYPES = {
-  NHAP: { label: 'Nhập kho', color: 'success', icon: <TrendingUp /> },
+  NHAP: { label: 'Nhập kho (thủ công)', color: 'success', icon: <TrendingUp /> },
+  NHAPKHO: { label: 'Nhập kho (đơn mua)', color: 'success', icon: <TrendingUp /> },
   XUAT: { label: 'Xuất kho', color: 'warning', icon: <TrendingDown /> },
   BANHANG: { label: 'Bán hàng', color: 'warning', icon: <TrendingDown /> },
   HUYHANG: { label: 'Hủy hàng', color: 'error', icon: <Delete /> },
@@ -132,7 +133,7 @@ const Adjustments = () => {
     {
       field: 'loai',
       headerName: 'Loại',
-      width: 130,
+      width: 180,
       renderCell: (params) => {
         const type = ADJUSTMENT_TYPES[params.value];
         return type ? (
@@ -318,8 +319,8 @@ const Adjustments = () => {
                 form.loai === 'DIEUCHINH'
                   ? 'Số lượng này sẽ được đặt làm tồn kho mới'
                   : form.loai === 'NHAP'
-                  ? 'Số lượng sẽ được cộng vào tồn kho'
-                  : 'Số lượng sẽ được trừ khỏi tồn kho'
+                    ? 'Số lượng sẽ được cộng vào tồn kho'
+                    : 'Số lượng sẽ được trừ khỏi tồn kho'
               }
             />
 
@@ -334,8 +335,8 @@ const Adjustments = () => {
                 form.loai === 'HUYHANG'
                   ? 'Lý do hủy hàng...'
                   : form.loai === 'DIEUCHINH'
-                  ? 'Lý do điều chỉnh...'
-                  : 'Ghi chú thêm...'
+                    ? 'Lý do điều chỉnh...'
+                    : 'Ghi chú thêm...'
               }
             />
           </Box>

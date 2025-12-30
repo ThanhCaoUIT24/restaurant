@@ -124,6 +124,11 @@ const verifyManagerPin = async (managerPin, managerUsername) => {
  * Add items to an existing order (used when table already has active order)
  */
 const addItemsToExistingOrder = async (user, orderId, items, note) => {
+  // Validate non-negative quantities
+  if (items?.some(i => Number(i.quantity) < 0)) {
+    throw Object.assign(new Error('Số lượng món không được âm'), { status: 400 });
+  }
+
   const result = await prisma.$transaction(async (tx) => {
     const order = await tx.donHang.findUnique({
       where: { id: orderId },
@@ -207,6 +212,11 @@ const addItemsToExistingOrder = async (user, orderId, items, note) => {
 
 const create = async (user, payload) => {
   const { tableId, items, note, datBanId = null } = payload;
+
+  // Validate non-negative quantities
+  if (items?.some(i => Number(i.quantity) < 0)) {
+    throw Object.assign(new Error('Số lượng món không được âm'), { status: 400 });
+  }
 
   // Check for existing active order on this table
   const existingOrder = await prisma.donHang.findFirst({

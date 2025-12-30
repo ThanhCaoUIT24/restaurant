@@ -46,10 +46,10 @@ const Users = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [createNewEmployee, setCreateNewEmployee] = useState(false);
-  const [form, setForm] = useState({ 
-    username: '', 
-    password: '', 
-    nhanVienId: '', 
+  const [form, setForm] = useState({
+    username: '',
+    password: '',
+    nhanVienId: '',
     vaiTroId: '',
     hoTen: '',
     soDienThoai: '',
@@ -64,13 +64,13 @@ const Users = () => {
     if (user) {
       setEditingUser(user);
       setCreateNewEmployee(false);
-      setForm({ 
-        username: user.username, 
-        password: '', 
+      setForm({
+        username: user.username,
+        password: '',
         nhanVienId: user.nhanVienId,
         vaiTroId: user.vaiTro?.id || '',
-        hoTen: '',
-        soDienThoai: '',
+        hoTen: user.hoTen || '',
+        soDienThoai: user.soDienThoai || '',
       });
     } else {
       setEditingUser(null);
@@ -95,6 +95,9 @@ const Users = () => {
           payload: {
             ...(form.password && { password: form.password }),
             vaiTroId: form.vaiTroId || null,
+            username: form.username,
+            hoTen: form.hoTen,
+            soDienThoai: form.soDienThoai,
           },
         });
         setFeedback({ type: 'success', message: 'Cập nhật thành công!' });
@@ -222,41 +225,9 @@ const Users = () => {
         <DialogTitle>{editingUser ? 'Sửa tài khoản' : 'Tạo tài khoản mới'}</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
-            {!editingUser && (
+            {!editingUser && !createNewEmployee ? (
               <>
-                {createNewEmployee ? (
-                  <>
-                    <Alert severity="info">Tạo nhân viên mới và tài khoản</Alert>
-                    <TextField
-                      label="Họ tên nhân viên"
-                      value={form.hoTen}
-                      onChange={(e) => setForm({ ...form, hoTen: e.target.value })}
-                      fullWidth
-                      required
-                    />
-                    <TextField
-                      label="Số điện thoại"
-                      value={form.soDienThoai}
-                      onChange={(e) => setForm({ ...form, soDienThoai: e.target.value })}
-                      fullWidth
-                      required
-                    />
-                    <TextField
-                      select
-                      label="Vai trò nhân viên"
-                      value={form.vaiTroId}
-                      onChange={(e) => setForm({ ...form, vaiTroId: e.target.value })}
-                      fullWidth
-                      required
-                    >
-                      {roles.map((role) => (
-                        <MenuItem key={role.id} value={role.id}>
-                          {role.ten}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-                  </>
-                ) : employees.length > 0 ? (
+                {employees.length > 0 ? (
                   <TextField
                     select
                     label="Nhân viên"
@@ -274,28 +245,63 @@ const Users = () => {
                 ) : (
                   <Alert severity="warning">Không có nhân viên chưa có tài khoản</Alert>
                 )}
-                
-                {employees.length > 0 && (
-                  <Button
-                    size="small"
-                    onClick={() => {
-                      setCreateNewEmployee(!createNewEmployee);
-                      setForm({ ...form, nhanVienId: '', hoTen: '', soDienThoai: '', vaiTroId: '' });
-                    }}
-                  >
-                    {createNewEmployee ? '↩ Chọn nhân viên có sẵn' : '➕ Tạo nhân viên mới'}
-                  </Button>
-                )}
-                
+              </>
+            ) : null}
+
+            {!editingUser && employees.length > 0 && (
+              <Button
+                size="small"
+                onClick={() => {
+                  setCreateNewEmployee(!createNewEmployee);
+                  setForm({ ...form, nhanVienId: '', hoTen: '', soDienThoai: '', vaiTroId: '' });
+                }}
+              >
+                {createNewEmployee ? '↩ Chọn nhân viên có sẵn' : '➕ Tạo nhân viên mới'}
+              </Button>
+            )}
+
+            {(editingUser || createNewEmployee) && (
+              <>
+                {createNewEmployee && <Alert severity="info">Tạo nhân viên mới và tài khoản</Alert>}
                 <TextField
-                  label="Tên đăng nhập"
-                  value={form.username}
-                  onChange={(e) => setForm({ ...form, username: e.target.value })}
+                  label="Họ tên nhân viên"
+                  value={form.hoTen}
+                  onChange={(e) => setForm({ ...form, hoTen: e.target.value })}
                   fullWidth
                   required
                 />
+                <TextField
+                  label="Số điện thoại"
+                  value={form.soDienThoai}
+                  onChange={(e) => setForm({ ...form, soDienThoai: e.target.value })}
+                  fullWidth
+                  required
+                />
+                <TextField
+                  select
+                  label="Vai trò"
+                  value={form.vaiTroId}
+                  onChange={(e) => setForm({ ...form, vaiTroId: e.target.value })}
+                  fullWidth
+                  required
+                >
+                  {roles.map((role) => (
+                    <MenuItem key={role.id} value={role.id}>
+                      {role.ten}
+                    </MenuItem>
+                  ))}
+                </TextField>
               </>
             )}
+
+            <TextField
+              label="Tên đăng nhập"
+              value={form.username}
+              onChange={(e) => setForm({ ...form, username: e.target.value })}
+              fullWidth
+              required
+            />
+
             <TextField
               label={editingUser ? 'Mật khẩu mới (để trống nếu không đổi)' : 'Mật khẩu'}
               type="password"
@@ -320,8 +326,8 @@ const Users = () => {
             onClick={handleSubmit}
             disabled={
               (!editingUser && (
-                !form.username || 
-                !form.password || 
+                !form.username ||
+                !form.password ||
                 (createNewEmployee ? (!form.hoTen || !form.soDienThoai || !form.vaiTroId) : !form.nhanVienId)
               )) ||
               createUser.isLoading ||

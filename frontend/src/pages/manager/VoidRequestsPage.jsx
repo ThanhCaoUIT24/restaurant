@@ -110,6 +110,18 @@ const VoidRequestsPage = () => {
         return <Chip label={label} color={color} size="small" />;
     };
 
+    const getItemStatusChip = (status) => {
+        const statusMap = {
+            CHOCHEBIEN: { label: 'Chờ chế biến', color: 'default' },
+            DANGLAM: { label: 'Đang làm', color: 'info' },
+            HOANTHANH: { label: 'Hoàn thành', color: 'success' },
+            DAPHUCVU: { label: 'Đã phục vụ', color: 'secondary' },
+            DAHUY: { label: 'Đã hủy', color: 'error' },
+        };
+        const { label, color } = statusMap[status] || { label: status, color: 'default' };
+        return <Chip label={label} color={color} size="small" variant="outlined" />;
+    };
+
     const formatDateTime = (dateString) => {
         return new Date(dateString).toLocaleString('vi-VN', {
             year: 'numeric',
@@ -153,6 +165,7 @@ const VoidRequestsPage = () => {
                                 <TableCell>Thời gian</TableCell>
                                 <TableCell>Bàn</TableCell>
                                 <TableCell>Món</TableCell>
+                                <TableCell>Trạng thái món</TableCell>
                                 <TableCell>Lý do</TableCell>
                                 <TableCell>Người yêu cầu</TableCell>
                                 <TableCell>Trạng thái</TableCell>
@@ -165,6 +178,7 @@ const VoidRequestsPage = () => {
                                     <TableCell>{formatDateTime(request.createdAt)}</TableCell>
                                     <TableCell>{request.donHang?.ban?.ten || 'N/A'}</TableCell>
                                     <TableCell>{request.chiTietDonHang?.monAn?.ten || 'N/A'}</TableCell>
+                                    <TableCell>{getItemStatusChip(request.chiTietDonHang?.trangThai)}</TableCell>
                                     <TableCell>
                                         <Typography variant="body2" sx={{ maxWidth: 300 }}>
                                             {request.lyDo}
@@ -215,6 +229,12 @@ const VoidRequestsPage = () => {
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                         Món: <strong>{selectedRequest?.chiTietDonHang?.monAn?.ten}</strong>
                     </Typography>
+                    <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="body2" color="text.secondary">
+                            Trạng thái:
+                        </Typography>
+                        {selectedRequest && getItemStatusChip(selectedRequest.chiTietDonHang?.trangThai)}
+                    </Box>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                         Lý do: {selectedRequest?.lyDo}
                     </Typography>
@@ -254,6 +274,12 @@ const VoidRequestsPage = () => {
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                         Món: <strong>{selectedRequest?.chiTietDonHang?.monAn?.ten}</strong>
                     </Typography>
+                    <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="body2" color="text.secondary">
+                            Trạng thái:
+                        </Typography>
+                        {selectedRequest && getItemStatusChip(selectedRequest.chiTietDonHang?.trangThai)}
+                    </Box>
                     <TextField
                         autoFocus
                         margin="dense"

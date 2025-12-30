@@ -48,6 +48,7 @@ enum ReservationStatus {
 enum POStatus {
   MOITAO
   DAGUI
+  DADUYET
   DANHANDU
   DANHANMOTPHAN
   DAHUY
@@ -73,6 +74,8 @@ model NhanVien {
   lichPhanCa LichPhanCa[]
   yeuCauHuyTao    YeuCauHuyMon[] @relation("VoidRequester")
   yeuCauHuyDuyet  YeuCauHuyMon[] @relation("VoidApprover")
+  donMuaHang      DonMuaHang[]  @relation("NguoiTaoPO")
+  thongBao        ThongBao[]
 }
 
 model VaiTro {
@@ -143,6 +146,8 @@ model NguyenVatLieu {
   chiTietDonMua  ChiTietDonMuaHang[]
   chiTietNhap    ChiTietNhapKho[]
   nhatKyXuat     NhatKyXuatKho[]
+  nhaCungCapId   String?
+  nhaCungCap     NhaCungCap? @relation(fields: [nhaCungCapId], references: [id])
 }
 
 model CongThucMon {
@@ -310,14 +315,17 @@ model NhaCungCap {
   dienThoai String?
   diaChi   String?
   donMuaHang DonMuaHang[]
+  nguyenVatLieu NguyenVatLieu[]
 }
 
 model DonMuaHang {
   id          String    @id @default(uuid())
   nhaCungCapId String
+  nguoiTaoId   String?
   trangThai   POStatus @default(MOITAO)
   createdAt   DateTime @default(now())
   nhaCungCap  NhaCungCap @relation(fields: [nhaCungCapId], references: [id])
+  nguoiTao    NhanVien?  @relation("NguoiTaoPO", fields: [nguoiTaoId], references: [id], onDelete: SetNull)
   chiTiet     ChiTietDonMuaHang[]
   phieuNhap   PhieuNhapKho[]
 }
@@ -402,6 +410,18 @@ model NhatKyHeThong {
   hanhDong        String
   thongTinBoSung  String?
   createdAt       DateTime @default(now())
+}
+
+model ThongBao {
+  id          String   @id @default(uuid())
+  nguoiNhanId String
+  tieuDe      String
+  noiDung     String
+  loai        String   // PO, SYSTEM
+  lienKet     String?
+  daDoc       Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  nguoiNhan   NhanVien @relation(fields: [nguoiNhanId], references: [id], onDelete: Cascade)
 }
 
 // ==================== PROMOTION / DISCOUNT ====================

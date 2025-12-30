@@ -323,7 +323,7 @@ const ReportsPageExample = () => {
       <h1>Báo cáo</h1>
 
       {/* Toàn bộ reports chỉ hiển thị cho Manager/Admin */}
-      <PermissionGate 
+      <PermissionGate
         permission={PERMISSIONS.REPORT_VIEW}
         fallback={<div>Bạn không có quyền xem báo cáo</div>}
       >
@@ -331,11 +331,11 @@ const ReportsPageExample = () => {
           <h2>Báo cáo doanh thu</h2>
           <p>Doanh thu hôm nay: 10,000,000 VNĐ</p>
 
-          {/* Nút "Xuất báo cáo" - REPORT_EXPORT */}
-          <PermissionGate permission={PERMISSIONS.REPORT_EXPORT}>
-            <button onClick={() => console.log('Export report')}>
-              Xuất báo cáo
-            </button>
+          {/* Nút "Xuất báo cáo" - REPORT_VIEW */}
+          <PermissionGate permission={PERMISSIONS.REPORT_VIEW}>
+            <Button variant="outlined" startIcon={<Download />}>
+              Xuất báo cáo (Chỉ hiện nếu có quyền REPORT_VIEW)
+            </Button>
           </PermissionGate>
         </div>
       </PermissionGate>

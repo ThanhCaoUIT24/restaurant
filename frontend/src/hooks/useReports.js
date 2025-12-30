@@ -1,10 +1,11 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import {
   fetchDashboard,
   fetchSales,
   fetchMenuPerformance,
   fetchInventoryReport,
   fetchAttendanceReport,
+  exportReport,
 } from '../api/reports.api';
 
 export const useDashboard = (params = {}) =>
@@ -37,3 +38,9 @@ export const useAttendanceReport = () =>
     queryKey: ['attendanceReport'],
     queryFn: fetchAttendanceReport,
   });
+
+export const useExportReport = () => {
+  return useMutation({
+    mutationFn: exportReport,
+  });
+};

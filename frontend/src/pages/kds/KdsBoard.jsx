@@ -432,10 +432,17 @@ const ItemCard = ({ item, ticketId, elapsedSeconds, onStatusChange, isNew }) => 
 
 // ==================== TABLE CARD COMPONENT ====================
 const TableCard = ({ ticket, now, onStatusChange, isNew }) => {
+  /* Check if there are any active items */
+  const hasActiveItems = ticket.items?.some(i => i.trangThai !== 'DAHUY');
+
   const elapsedSeconds = ticket.createdAt
     ? Math.max(0, Math.floor((now - new Date(ticket.createdAt).getTime()) / 1000))
     : 0;
-  const urgency = getUrgencyLevel(elapsedSeconds);
+
+  /* If all items are voided, use neutral color/status instead of time-based urgency */
+  const urgency = !hasActiveItems
+    ? { level: 'normal', color: COLORS.textSecondary, label: 'Đã hủy' }
+    : getUrgencyLevel(elapsedSeconds);
   const tableName = ticket.table || ticket.ban?.ten || 'Không rõ';
 
   // Calculate stats
@@ -530,30 +537,32 @@ const TableCard = ({ ticket, now, onStatusChange, isNew }) => {
               </Box>
             </Stack>
 
-            {/* Big Timer */}
-            <Box sx={{
-              px: 2,
-              py: 1,
-              borderRadius: 3,
-              bgcolor: alpha(urgency.color, 0.15),
-              border: `2px solid ${urgency.color}`,
-              textAlign: 'center',
-            }}>
-              <Typography
-                variant="h4"
-                sx={{
-                  fontWeight: 900,
-                  color: urgency.color,
-                  fontFamily: 'monospace',
-                  lineHeight: 1,
-                }}
-              >
-                {formatTime(elapsedSeconds)}
-              </Typography>
-              <Typography variant="caption" sx={{ color: urgency.color, fontWeight: 600 }}>
-                {urgency.label}
-              </Typography>
-            </Box>
+            {/* Big Timer - Only show if there are active items */}
+            {ticket.items?.some(i => i.trangThai !== 'DAHUY') && (
+              <Box sx={{
+                px: 2,
+                py: 1,
+                borderRadius: 3,
+                bgcolor: alpha(urgency.color, 0.15),
+                border: `2px solid ${urgency.color}`,
+                textAlign: 'center',
+              }}>
+                <Typography
+                  variant="h4"
+                  sx={{
+                    fontWeight: 900,
+                    color: urgency.color,
+                    fontFamily: 'monospace',
+                    lineHeight: 1,
+                  }}
+                >
+                  {formatTime(elapsedSeconds)}
+                </Typography>
+                <Typography variant="caption" sx={{ color: urgency.color, fontWeight: 600 }}>
+                  {urgency.label}
+                </Typography>
+              </Box>
+            )}
           </Stack>
         </Box>
 
@@ -826,47 +835,59 @@ const ItemViewMode = ({ tickets, now, onStatusChange }) => {
                             <Chip label={`x${item.soLuong}`} size="small" sx={{ height: 18, fontSize: '0.65rem' }} />
                           )}
                         </Stack>
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            fontWeight: 700,
-                            color: getUrgencyLevel(item.elapsedSeconds).color,
-                            fontFamily: 'monospace',
-                          }}
-                        >
-                          {formatTime(item.elapsedSeconds)}
-                        </Typography>
+                        {item.trangThai !== 'DAHUY' ? (
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              fontWeight: 700,
+                              color: getUrgencyLevel(item.elapsedSeconds).color,
+                              fontFamily: 'monospace',
+                            }}
+                          >
+                            {formatTime(item.elapsedSeconds)}
+                          </Typography>
+                        ) : (
+                          <Typography variant="caption" sx={{ color: COLORS.textSecondary, fontWeight: 700, fontStyle: 'italic' }}>
+                            Đã hủy
+                          </Typography>
+                        )}
                       </Stack>
 
                       <Stack direction="row" spacing={0.5}>
-                        {Object.entries(STATUS_CONFIG).filter(([key]) => key !== 'CHOXULY').map(([key, config]) => {
-                          const isActive = item.trangThai === key;
-                          return (
-                            <Button
-                              key={key}
-                              size="small"
-                              variant={isActive ? 'contained' : 'outlined'}
-                              onClick={() => onStatusChange(item.id, key)}
-                              sx={{
-                                flex: 1,
-                                py: 0.5,
-                                minWidth: 0,
-                                borderRadius: 1.5,
-                                textTransform: 'none',
-                                fontWeight: 700,
-                                fontSize: '0.65rem',
-                                bgcolor: isActive ? config.color : 'transparent',
-                                borderColor: alpha(config.color, 0.5),
-                                color: isActive ? '#fff' : config.color,
-                                '&:hover': {
-                                  bgcolor: isActive ? config.color : alpha(config.color, 0.1),
-                                },
-                              }}
-                            >
-                              {config.shortLabel}
-                            </Button>
-                          );
-                        })}
+                        {item.trangThai === 'DAHUY' ? (
+                          <Typography variant="caption" sx={{ color: COLORS.danger, width: '100%', textAlign: 'center', py: 0.5 }}>
+                            Món đã hủy
+                          </Typography>
+                        ) : (
+                          Object.entries(STATUS_CONFIG).filter(([key]) => key !== 'CHOXULY').map(([key, config]) => {
+                            const isActive = item.trangThai === key;
+                            return (
+                              <Button
+                                key={key}
+                                size="small"
+                                variant={isActive ? 'contained' : 'outlined'}
+                                onClick={() => onStatusChange(item.id, key)}
+                                sx={{
+                                  flex: 1,
+                                  py: 0.5,
+                                  minWidth: 0,
+                                  borderRadius: 1.5,
+                                  textTransform: 'none',
+                                  fontWeight: 700,
+                                  fontSize: '0.65rem',
+                                  bgcolor: isActive ? config.color : 'transparent',
+                                  borderColor: alpha(config.color, 0.5),
+                                  color: isActive ? '#fff' : config.color,
+                                  '&:hover': {
+                                    bgcolor: isActive ? config.color : alpha(config.color, 0.1),
+                                  },
+                                }}
+                              >
+                                {config.shortLabel}
+                              </Button>
+                            );
+                          })
+                        )}
                       </Stack>
                     </Box>
                   ))}

@@ -14,6 +14,12 @@ const list = async (query) => {
 
 const create = async (payload) => {
   const { nhaCungCapId, items } = payload;
+
+  // Validate non-negative values
+  if (items?.some(i => Number(i.soLuong) < 0 || Number(i.donGia) < 0)) {
+    throw Object.assign(new Error('Số lượng và đơn giá không được âm'), { status: 400 });
+  }
+
   return prisma.$transaction(async (tx) => {
     const po = await tx.donMuaHang.create({
       data: {
@@ -26,8 +32,8 @@ const create = async (payload) => {
         data: items.map((i) => ({
           donMuaHangId: po.id,
           nguyenVatLieuId: i.nguyenVatLieuId,
-          soLuong: i.soLuong,
-          donGia: i.donGia,
+          soLuong: Math.max(0, Number(i.soLuong)),
+          donGia: Math.max(0, Number(i.donGia)),
         })),
       });
     }
@@ -46,35 +52,76 @@ const updateStatus = async (id, status) => {
 
 const createReceipt = async (payload) => {
   const { donMuaHangId, nhanVienId = null, items } = payload;
+
+  // Validate non-negative values
+  if (items?.some(i => Number(i.soLuong) < 0 || Number(i.donGia) < 0)) {
+    throw Object.assign(new Error('Số lượng và đơn giá không được âm'), { status: 400 });
+  }
+
   return prisma.$transaction(async (tx) => {
+    // 1. Fetch PO lines to compare quantities
+    let poLines = [];
+    if (donMuaHangId) {
+      poLines = await tx.chiTietDonMuaHang.findMany({ where: { donMuaHangId } });
+    }
+
     const receipt = await tx.phieuNhapKho.create({
       data: {
         donMuaHangId,
         nhanVienId,
       },
     });
+
     for (const item of items) {
+      const soLuong = Math.max(0, Number(item.soLuong));
+      const donGia = Math.max(0, Number(item.donGia));
+
       await tx.chiTietNhapKho.create({
         data: {
           phieuNhapKhoId: receipt.id,
           nguyenVatLieuId: item.nguyenVatLieuId,
-          soLuong: item.soLuong,
-          donGia: item.donGia,
+          soLuong,
+          donGia,
         },
       });
+
       const current = await tx.nguyenVatLieu.findUnique({ where: { id: item.nguyenVatLieuId } });
       await tx.nguyenVatLieu.update({
         where: { id: item.nguyenVatLieuId },
         data: {
-          soLuongTon: Number(current.soLuongTon) + Number(item.soLuong),
-          giaNhapGanNhat: item.donGia,
+          soLuongTon: Number(current.soLuongTon) + soLuong,
+          giaNhapGanNhat: donGia,
+        },
+      });
+
+      // Calculate discrepancy
+      let note = donMuaHangId ? `Nhập từ đơn mua hàng #${donMuaHangId.slice(0, 8)}` : 'Nhập kho từ phiếu nhập';
+
+      if (donMuaHangId) {
+        const poLine = poLines.find(l => l.nguyenVatLieuId === item.nguyenVatLieuId);
+        if (poLine) {
+          const ordered = Number(poLine.soLuong);
+          const diff = soLuong - ordered;
+          if (diff !== 0) {
+            const sign = diff > 0 ? '+' : '';
+            note += ` (Lệch: ${sign}${diff} ${current.donViTinh})`;
+          }
+        }
+      }
+
+      // Log to inventory adjustment history (NhatKyXuatKho)
+      await tx.nhatKyXuatKho.create({
+        data: {
+          loai: 'NHAPKHO',
+          nguyenVatLieuId: item.nguyenVatLieuId,
+          soLuong,
+          ghiChu: note,
         },
       });
     }
 
-    // Update PO status based on received quantities
+    // Update PO status
     if (donMuaHangId) {
-      const poLines = await tx.chiTietDonMuaHang.findMany({ where: { donMuaHangId } });
       const received = await tx.chiTietNhapKho.findMany({
         where: { phieuNhapKho: { donMuaHangId } },
       });

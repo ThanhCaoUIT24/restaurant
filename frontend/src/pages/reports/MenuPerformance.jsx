@@ -63,6 +63,16 @@ const MenuPerformance = () => {
                   Doanh thu
                 </TableSortLabel>
               </TableCell>
+              <TableCell sortDirection={orderBy === 'giaVon' ? direction : false}>
+                <TableSortLabel active={orderBy === 'giaVon'} direction={direction} onClick={() => handleSort('giaVon')}>
+                  Giá vốn
+                </TableSortLabel>
+              </TableCell>
+              <TableCell sortDirection={orderBy === 'loiNhuan' ? direction : false}>
+                <TableSortLabel active={orderBy === 'loiNhuan'} direction={direction} onClick={() => handleSort('loiNhuan')}>
+                  Lợi nhuận
+                </TableSortLabel>
+              </TableCell>
               <TableCell>Tỷ trọng (%)</TableCell>
             </TableRow>
           </TableHead>
@@ -72,13 +82,17 @@ const MenuPerformance = () => {
                 <TableCell>{row.ten}</TableCell>
                 <TableCell>{row.soLuong}</TableCell>
                 <TableCell>{row.doanhThu?.toLocaleString('vi-VN')}</TableCell>
+                <TableCell>{row.giaVon?.toLocaleString('vi-VN')}</TableCell>
+                <TableCell sx={{ color: (row.loiNhuan || 0) >= 0 ? 'success.main' : 'error.main', fontWeight: 'bold' }}>
+                  {row.loiNhuan?.toLocaleString('vi-VN')}
+                </TableCell>
                 <TableCell>{row.tyTrong.toFixed(1)}</TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </Paper>
-    </MainLayout>
+    </MainLayout >
   );
 };
 

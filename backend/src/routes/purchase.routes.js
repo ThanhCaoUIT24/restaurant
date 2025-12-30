@@ -18,7 +18,8 @@ router.use(authMiddleware);
 // Purchase Order - ThuKho có thể tạo, Manager/Admin duyệt
 router.get('/orders', requirePermissions([PERMISSIONS.PO_VIEW]), listPOs);
 router.post('/orders', requirePermissions([PERMISSIONS.PO_CREATE]), createPO);
-router.patch('/orders/:id/status', requirePermissions([PERMISSIONS.PO_APPROVE]), updatePOStatus);
+// Allow PO_CREATE to send for approval (status update)
+router.patch('/orders/:id/status', requirePermissions([PERMISSIONS.PO_APPROVE, PERMISSIONS.PO_CREATE]), updatePOStatus);
 router.post('/receipts', requirePermissions([PERMISSIONS.STOCK_IMPORT]), createReceipt);
 router.get('/suppliers', requirePermissions([PERMISSIONS.PO_VIEW]), listSuppliers);
 router.post('/suppliers', requirePermissions([PERMISSIONS.PO_CREATE]), createSupplier);

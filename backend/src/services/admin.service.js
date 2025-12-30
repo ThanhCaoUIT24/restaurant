@@ -109,21 +109,21 @@ const createUser = async (payload) => {
       passwordHash,
       nhanVienId: employeeId,
     },
-    include: { 
-      nhanVien: { 
-        include: { vaiTro: true } 
-      } 
+    include: {
+      nhanVien: {
+        include: { vaiTro: true }
+      }
     },
   });
 
-  return { 
-    message: hoTen ? 'Tạo nhân viên và tài khoản thành công' : 'Tạo tài khoản thành công', 
-    user: { 
-      id: user.id, 
+  return {
+    message: hoTen ? 'Tạo nhân viên và tài khoản thành công' : 'Tạo tài khoản thành công',
+    user: {
+      id: user.id,
       username: user.username,
       hoTen: user.nhanVien?.hoTen,
       vaiTro: user.nhanVien?.vaiTro?.ten,
-    } 
+    }
   };
 };
 
@@ -131,10 +131,21 @@ const createUser = async (payload) => {
  * Update user (change password or role)
  */
 const updateUser = async (id, payload) => {
-  const { password, vaiTroId } = payload;
+  const { password, vaiTroId, username, hoTen, soDienThoai } = payload;
 
   const user = await prisma.taiKhoanNguoiDung.findUnique({ where: { id }, include: { nhanVien: true } });
   if (!user) throw Object.assign(new Error('Tài khoản không tồn tại'), { status: 404 });
+
+  // Update username if provided and different
+  if (username && username !== user.username) {
+    const existing = await prisma.taiKhoanNguoiDung.findUnique({ where: { username } });
+    if (existing) throw Object.assign(new Error('Tên đăng nhập đã tồn tại'), { status: 400 });
+
+    await prisma.taiKhoanNguoiDung.update({
+      where: { id },
+      data: { username },
+    });
+  }
 
   // Update password if provided
   if (password) {
@@ -150,6 +161,30 @@ const updateUser = async (id, payload) => {
     await prisma.nhanVien.update({
       where: { id: user.nhanVienId },
       data: { vaiTroId: vaiTroId || null },
+    });
+  }
+
+  // Update employee name if provided
+  if (hoTen && hoTen !== user.nhanVien?.hoTen) {
+    await prisma.nhanVien.update({
+      where: { id: user.nhanVienId },
+      data: { hoTen },
+    });
+  }
+
+  // Update employee phone if provided
+  if (soDienThoai && soDienThoai !== user.nhanVien?.soDienThoai) {
+    const existingPhone = await prisma.nhanVien.findFirst({
+      where: {
+        soDienThoai,
+        id: { not: user.nhanVienId } // Exclude current employee
+      },
+    });
+    if (existingPhone) throw Object.assign(new Error('Số điện thoại đã được sử dụng'), { status: 400 });
+
+    await prisma.nhanVien.update({
+      where: { id: user.nhanVienId },
+      data: { soDienThoai },
     });
   }
 
@@ -229,7 +264,7 @@ const createRole = async (payload) => {
 const updateRole = async (id, payload, user = null) => {
   const { ten, moTa, quyenIds } = payload;
 
-  const role = await prisma.vaiTro.findUnique({ 
+  const role = await prisma.vaiTro.findUnique({
     where: { id },
     include: { quyen: { include: { quyen: true } } },
   });
@@ -412,7 +447,7 @@ const createLoyaltyTier = async (payload) => {
 const updateLoyaltyTier = async (id, payload) => {
   const existing = await prisma.hangThanhVien.findUnique({ where: { id } });
   if (!existing) throw Object.assign(new Error('Hạng thành viên không tồn tại'), { status: 404 });
-  
+
   const tier = await prisma.hangThanhVien.update({
     where: { id },
     data: payload,
@@ -426,7 +461,7 @@ const updateLoyaltyTier = async (id, payload) => {
 const deleteLoyaltyTier = async (id) => {
   const existing = await prisma.hangThanhVien.findUnique({ where: { id } });
   if (!existing) throw Object.assign(new Error('Hạng thành viên không tồn tại'), { status: 404 });
-  
+
   await prisma.hangThanhVien.delete({ where: { id } });
   return { message: 'Xóa hạng thành viên thành công' };
 };
@@ -439,7 +474,7 @@ const deleteLoyaltyTier = async (id) => {
 const listPromotions = async (query = {}) => {
   const where = {};
   if (query.active === 'true') where.trangThai = true;
-  
+
   const promotions = await prisma.khuyenMai.findMany({
     where,
     orderBy: { createdAt: 'desc' },
@@ -481,12 +516,12 @@ const createPromotion = async (payload) => {
 const updatePromotion = async (id, payload) => {
   const existing = await prisma.khuyenMai.findUnique({ where: { id } });
   if (!existing) throw Object.assign(new Error('Khuyến mãi không tồn tại'), { status: 404 });
-  
+
   const data = { ...payload };
   if (data.dieuKien) data.dieuKien = JSON.stringify(data.dieuKien);
   if (data.ngayBatDau) data.ngayBatDau = new Date(data.ngayBatDau);
   if (data.ngayKetThuc) data.ngayKetThuc = new Date(data.ngayKetThuc);
-  
+
   const promo = await prisma.khuyenMai.update({ where: { id }, data });
   return { message: 'Cập nhật khuyến mãi thành công', promotion: promo };
 };
@@ -497,7 +532,7 @@ const updatePromotion = async (id, payload) => {
 const deletePromotion = async (id) => {
   const existing = await prisma.khuyenMai.findUnique({ where: { id } });
   if (!existing) throw Object.assign(new Error('Khuyến mãi không tồn tại'), { status: 404 });
-  
+
   await prisma.khuyenMai.delete({ where: { id } });
   return { message: 'Xóa khuyến mãi thành công' };
 };
@@ -509,10 +544,10 @@ const deletePromotion = async (id) => {
  */
 const updateCategoryPrices = async (danhMucId, adjustment) => {
   const { type, value } = adjustment; // type: 'PHAN_TRAM' | 'SO_TIEN', value: number
-  
+
   const dishes = await prisma.monAn.findMany({ where: { danhMucId } });
   if (!dishes.length) throw Object.assign(new Error('Không tìm thấy món ăn trong danh mục'), { status: 404 });
-  
+
   const updates = [];
   for (const dish of dishes) {
     let newPrice;
@@ -522,14 +557,14 @@ const updateCategoryPrices = async (danhMucId, adjustment) => {
       newPrice = Number(dish.giaBan) + value;
     }
     newPrice = Math.max(0, Math.round(newPrice / 1000) * 1000); // Round to nearest 1000
-    
+
     const updated = await prisma.monAn.update({
       where: { id: dish.id },
       data: { giaBan: newPrice },
     });
     updates.push(updated);
   }
-  
+
   return { message: `Đã cập nhật giá ${updates.length} món`, items: updates };
 };
 

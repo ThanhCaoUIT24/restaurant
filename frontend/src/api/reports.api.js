@@ -24,3 +24,8 @@ export const fetchAttendanceReport = async () => {
   const { data } = await api.get('/reports/attendance');
   return data.items || [];
 };
+
+export const exportReport = async (params = {}) => {
+  const response = await api.get('/reports/export', { params, responseType: 'blob' });
+  return response; // Return full response to get headers if needed, or just data (blob)
+};

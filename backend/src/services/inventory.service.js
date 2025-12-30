@@ -12,6 +12,7 @@ const parseOrderIdFromNote = (note) => {
 const listMaterials = async () => {
   const items = await prisma.nguyenVatLieu.findMany({
     orderBy: { ten: 'asc' },
+    include: { nhaCungCap: true },
   });
   return {
     items: items.map((m) => ({
@@ -27,12 +28,17 @@ const listMaterials = async () => {
       giaNhapGanNhat: m.giaNhapGanNhat ? Number(m.giaNhapGanNhat) : null,
       createdAt: m.createdAt,
       updatedAt: m.updatedAt,
+      nhaCungCapId: m.nhaCungCapId,
+      nhaCungCap: m.nhaCungCap,
     })),
   };
 };
 
 const getMaterial = async (id) => {
-  const mat = await prisma.nguyenVatLieu.findUnique({ where: { id } });
+  const mat = await prisma.nguyenVatLieu.findUnique({
+    where: { id },
+    include: { nhaCungCap: true },
+  });
   if (!mat) throw Object.assign(new Error('Nguyên vật liệu không tồn tại'), { status: 404 });
   return {
     id: mat.id,
@@ -43,6 +49,8 @@ const getMaterial = async (id) => {
     giaNhap: mat.giaNhapGanNhat ? Number(mat.giaNhapGanNhat) : 0,
     createdAt: mat.createdAt,
     updatedAt: mat.updatedAt,
+    nhaCungCapId: mat.nhaCungCapId,
+    nhaCungCap: mat.nhaCungCap,
   };
 };
 
@@ -55,6 +63,7 @@ const createMaterial = async (payload) => {
     mucToiThieu,
     giaNhapGanNhat,
     giaNhap,
+    nhaCungCapId,
   } = payload;
   if (!ten || !donViTinh) {
     throw Object.assign(new Error('Thiếu thông tin nguyên vật liệu'), { status: 400 });
@@ -63,29 +72,53 @@ const createMaterial = async (payload) => {
   const minStock = mucTonToiThieu !== undefined ? mucTonToiThieu : (mucToiThieu !== undefined ? mucToiThieu : 0);
   const unitPrice = giaNhapGanNhat !== undefined ? giaNhapGanNhat : (giaNhap !== undefined ? giaNhap : null);
 
+  // Validate non-negative values
+  if (Number(soLuongTon) < 0 || Number(minStock) < 0 || (unitPrice !== null && Number(unitPrice) < 0)) {
+    throw Object.assign(new Error('Các giá trị số không được âm'), { status: 400 });
+  }
+
   const mat = await prisma.nguyenVatLieu.create({
-    data: { ten, donViTinh, soLuongTon, mucTonToiThieu: minStock, giaNhapGanNhat: unitPrice },
+    data: {
+      ten,
+      donViTinh,
+      soLuongTon: Math.max(0, Number(soLuongTon)),
+      mucTonToiThieu: Math.max(0, Number(minStock)),
+      giaNhapGanNhat: unitPrice !== null ? Math.max(0, Number(unitPrice)) : null,
+      nhaCungCapId: nhaCungCapId || null,
+    },
+    include: { nhaCungCap: true },
   });
   return { message: 'Tạo nguyên vật liệu thành công', material: mat };
 };
 
 const updateMaterial = async (id, payload) => {
-  const { ten, donViTinh, soLuongTon, mucTonToiThieu, mucToiThieu, giaNhapGanNhat, giaNhap } = payload;
+  const { ten, donViTinh, soLuongTon, mucTonToiThieu, mucToiThieu, giaNhapGanNhat, giaNhap, nhaCungCapId } = payload;
   const existing = await prisma.nguyenVatLieu.findUnique({ where: { id } });
   if (!existing) throw Object.assign(new Error('Nguyên vật liệu không tồn tại'), { status: 404 });
 
   const minStock = mucTonToiThieu !== undefined ? mucTonToiThieu : mucToiThieu;
   const unitPrice = giaNhapGanNhat !== undefined ? giaNhapGanNhat : giaNhap;
+  // Convert empty string to null for foreign key
+  const supplierId = nhaCungCapId === '' ? null : nhaCungCapId;
+
+  // Validate non-negative values
+  if ((soLuongTon !== undefined && Number(soLuongTon) < 0) ||
+    (minStock !== undefined && Number(minStock) < 0) ||
+    (unitPrice !== undefined && Number(unitPrice) < 0)) {
+    throw Object.assign(new Error('Các giá trị số không được âm'), { status: 400 });
+  }
 
   const mat = await prisma.nguyenVatLieu.update({
     where: { id },
     data: {
       ...(ten && { ten }),
       ...(donViTinh && { donViTinh }),
-      ...(soLuongTon !== undefined && { soLuongTon }),
-      ...(minStock !== undefined && { mucTonToiThieu: minStock }),
-      ...(unitPrice !== undefined && { giaNhapGanNhat: unitPrice }),
+      ...(soLuongTon !== undefined && { soLuongTon: Math.max(0, Number(soLuongTon)) }),
+      ...(minStock !== undefined && { mucTonToiThieu: Math.max(0, Number(minStock)) }),
+      ...(unitPrice !== undefined && { giaNhapGanNhat: Math.max(0, Number(unitPrice)) }),
+      ...(supplierId !== undefined && { nhaCungCapId: supplierId }),
     },
+    include: { nhaCungCap: true },
   });
   return { message: 'Cập nhật nguyên vật liệu thành công', material: mat };
 };
@@ -128,7 +161,9 @@ const deleteMaterial = async (id) => {
 // ==================== ALERTS ====================
 
 const listAlerts = async () => {
-  const all = await prisma.nguyenVatLieu.findMany();
+  const all = await prisma.nguyenVatLieu.findMany({
+    include: { nhaCungCap: true },
+  });
   const alerts = all.filter((i) => Number(i.soLuongTon) <= Number(i.mucTonToiThieu));
   return {
     alerts: alerts.map((m) => ({
@@ -138,6 +173,8 @@ const listAlerts = async () => {
       donViTinh: m.donViTinh,
       soLuongTon: Number(m.soLuongTon),
       mucTonToiThieu: Number(m.mucTonToiThieu),
+      nhaCungCapId: m.nhaCungCapId,
+      nhaCungCap: m.nhaCungCap,
     })),
   };
 };

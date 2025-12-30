@@ -36,7 +36,7 @@ import {
   Schedule,
 } from '@mui/icons-material';
 
-import { useDashboard } from '../../hooks/useReports';
+import { useDashboard, useExportReport } from '../../hooks/useReports';
 
 // ==================== PREMIUM COLORS ====================
 const COLORS = {
@@ -205,6 +205,10 @@ const ReportsDashboard = () => {
   const navigate = useNavigate();
   const [dateRange, setDateRange] = useState('today');
 
+  const { mutate: exportData, isPending: isExporting } = useExportReport();
+
+
+
   const formatCurrency = (amount) =>
     new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(
       amount || 0,
@@ -261,6 +265,34 @@ const ReportsDashboard = () => {
     return { from: start, to: end };
   }, [dateRange]);
 
+  const handleExport = () => {
+    exportData(dashboardParams, {
+      onSuccess: (response) => {
+        const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+
+        let fileName = `baocao-${dateRange}.csv`;
+        if (response.headers && response.headers['content-disposition']) {
+          const matches = response.headers['content-disposition'].match(/filename="?([^"]+)"?/);
+          if (matches && matches[1]) fileName = matches[1];
+        }
+
+        link.setAttribute('download', fileName);
+        document.body.appendChild(link);
+        link.click();
+
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(link);
+      },
+      onError: (err) => {
+        console.error('Export failed:', err);
+        alert('Lỗi khi xuất báo cáo: ' + (err.message || 'Unknown error'));
+      }
+    });
+  };
+
   const chartRange = useMemo(() => {
     if (dateRange === 'year') return 'year';
     if (dateRange === 'month' || dateRange === 'quarter') return 'month';
@@ -311,27 +343,27 @@ const ReportsDashboard = () => {
   const quickStats = [
     {
       icon: <AttachMoney sx={{ color: COLORS.success, fontSize: 24 }} />,
-      label: 'Doanh thu hôm nay',
+      label: 'Doanh thu',
       value: isLoading ? '...' : formatCurrency(data?.revenue || 0),
       color: COLORS.success,
     },
     {
+      icon: <TrendingUp sx={{ color: COLORS.purple, fontSize: 24 }} />,
+      label: 'Lợi nhuận gộp',
+      value: isLoading ? '...' : formatCurrency(data?.profit || 0),
+      color: COLORS.purple,
+    },
+    {
       icon: <Restaurant sx={{ color: COLORS.primary, fontSize: 24 }} />,
-      label: 'Đơn hàng hôm nay',
+      label: 'Đơn hàng',
       value: isLoading ? '...' : String(data?.bills || 0),
       color: COLORS.primary,
     },
     {
       icon: <People sx={{ color: COLORS.info, fontSize: 24 }} />,
-      label: 'Khách hàng mới',
+      label: 'Khách hàng',
       value: isLoading ? '...' : String(data?.guests || 0),
       color: COLORS.info,
-    },
-    {
-      icon: <TrendingUp sx={{ color: COLORS.purple, fontSize: 24 }} />,
-      label: 'Giá trị TB/đơn',
-      value: isLoading ? '...' : formatCurrency(data?.avgBill || 0),
-      color: COLORS.purple,
     },
   ];
 
@@ -433,13 +465,15 @@ const ReportsDashboard = () => {
             <Button
               variant="outlined"
               startIcon={<Download />}
+              onClick={handleExport}
+              disabled={isExporting}
               sx={{
                 borderRadius: 2,
                 textTransform: 'none',
                 fontWeight: 600,
               }}
             >
-              Xuất báo cáo
+              {isExporting ? 'Đang xuất...' : 'Xuất báo cáo'}
             </Button>
           </Stack>
         </Stack>

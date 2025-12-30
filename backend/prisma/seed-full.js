@@ -11,69 +11,64 @@ const permissionDescriptions = {
   'ACCOUNT_CREATE': 'Tạo tài khoản',
   'ACCOUNT_MANAGE': 'Quản lý tài khoản',
   'ACCOUNT_DELETE': 'Xóa tài khoản',
-  
+
   // Reports
   'REPORT_VIEW': 'Xem báo cáo',
-  'REPORT_EXPORT': 'Xuất báo cáo',
-  
+
   // Stock/Inventory
   'STOCK_MANAGE': 'Quản lý kho',
   'STOCK_IMPORT': 'Nhập kho',
   'STOCK_VIEW': 'Xem kho',
-  
+
   // Menu Management
   'MENU_MANAGE': 'Quản lý thực đơn',
   'MENU_CREATE': 'Tạo món ăn',
   'MENU_UPDATE': 'Cập nhật món ăn',
   'MENU_DELETE': 'Xóa món ăn',
   'MENU_VIEW': 'Xem thực đơn',
-  
+
   // Order Management
   'ORDER_CREATE': 'Tạo đơn hàng',
   'ORDER_UPDATE': 'Cập nhật đơn hàng',
   'ORDER_VIEW': 'Xem đơn hàng',
   'ORDER_VOID': 'Hủy đơn hàng',
   'ORDER_VOID_APPROVE': 'Duyệt hủy đơn',
-  
+
   // Payment
   'PAYMENT_EXECUTE': 'Thực hiện thanh toán',
   'PAYMENT_VIEW': 'Xem thanh toán',
-  
+
   // Shift Management (Ca thu ngân)
   'SHIFT_MANAGE': 'Quản lý ca thu ngân',
   'SHIFT_OPEN': 'Mở ca',
   'SHIFT_CLOSE': 'Đóng ca',
-  
+
   // Kitchen Display System
   'KDS_VIEW': 'Xem màn hình bếp',
   'DISH_STATUS_UPDATE': 'Cập nhật trạng thái món',
-  
+
   // Table Management
   'TABLE_VIEW': 'Xem bàn',
   'TABLE_MANAGE': 'Quản lý bàn',
-  
+
   // Purchase Order
   'PO_CREATE': 'Tạo đơn mua hàng',
   'PO_APPROVE': 'Duyệt đơn mua hàng',
   'PO_VIEW': 'Xem đơn mua hàng',
-  
+
   // HR Management
   'HR_MANAGE': 'Quản lý nhân sự',
   'HR_VIEW': 'Xem nhân sự',
-  
+
   // Reservation
   'RESERVATION_CREATE': 'Tạo đặt bàn',
   'RESERVATION_MANAGE': 'Quản lý đặt bàn',
   'RESERVATION_VIEW': 'Xem đặt bàn',
-  
+
   // Customer
   'CUSTOMER_VIEW': 'Xem khách hàng',
   'CUSTOMER_MANAGE': 'Quản lý khách hàng',
-  
-  // Shift Schedule Management (Lịch làm việc)
-  'SHIFT_SCHEDULE_VIEW': 'Xem lịch làm việc',
-  'SHIFT_SCHEDULE_MANAGE': 'Quản lý ca làm việc',
-  
+
   // Attendance/Timekeeping
   'ATTENDANCE_VIEW': 'Xem chấm công',
   'ATTENDANCE_MANAGE': 'Quản lý chấm công',
@@ -120,7 +115,7 @@ const dishes = [
   { ten: 'Chả giò chiên', giaBan: 55000, danhMuc: 'Khai vị', moTa: '4 cuốn, sốt chua ngọt', tramCheBien: 'BEP_CHIÊN', hinhAnh: '/images/dishes/cha-gio-chien.jpg' },
   { ten: 'Súp hải sản', giaBan: 65000, danhMuc: 'Khai vị', moTa: 'Súp nấu từ tôm, mực, sò', tramCheBien: 'BEP_NONG', hinhAnh: '/images/dishes/sup-hai-san.jpg' },
   { ten: 'Salad trộn', giaBan: 50000, danhMuc: 'Khai vị', moTa: 'Salad rau củ tươi', tramCheBien: 'BEP_LANH', hinhAnh: '/images/dishes/salad-tron.jpg' },
-  
+
   // Món chính
   { ten: 'Bò lúc lắc', giaBan: 165000, danhMuc: 'Món chính', moTa: 'Bò Úc xào rau củ', tramCheBien: 'BEP_NONG', hinhAnh: '/images/dishes/bo-luc-lac.jpg' },
   { ten: 'Sườn nướng BBQ', giaBan: 185000, danhMuc: 'Món chính', moTa: 'Sườn heo nướng sốt BBQ', tramCheBien: 'BEP_NUONG', hinhAnh: '/images/dishes/suon-nuong-bbq.jpg' },
@@ -128,13 +123,13 @@ const dishes = [
   { ten: 'Gà nướng nguyên con', giaBan: 280000, danhMuc: 'Món chính', moTa: 'Gà ta nướng muối ớt', tramCheBien: 'BEP_NUONG', hinhAnh: '/images/dishes/ga-nuong-nguyen-con.jpg' },
   { ten: 'Tôm sú nướng muối ớt', giaBan: 195000, danhMuc: 'Món chính', moTa: '300g tôm sú tươi', tramCheBien: 'BEP_NUONG', hinhAnh: '/images/dishes/tom-su-nuong-muoi-ot.jpg' },
   { ten: 'Mực xào sa tế', giaBan: 155000, danhMuc: 'Món chính', moTa: 'Mực tươi xào cay', tramCheBien: 'BEP_NONG', hinhAnh: '/images/dishes/muc-xao-sa-te.jpg' },
-  
+
   // Cơm - Mì
   { ten: 'Cơm chiên dương châu', giaBan: 75000, danhMuc: 'Cơm - Mì', moTa: 'Cơm chiên với tôm, xá xíu', tramCheBien: 'BEP_NONG', hinhAnh: '/images/dishes/com-chien-duong-chau.jpg' },
   { ten: 'Phở bò tái', giaBan: 65000, danhMuc: 'Cơm - Mì', moTa: 'Phở nước trong, bò tái', tramCheBien: 'BEP_NONG', hinhAnh: '/images/dishes/pho-bo-tai.jpg' },
   { ten: 'Bún bò Huế', giaBan: 70000, danhMuc: 'Cơm - Mì', moTa: 'Bún bò đặc sản Huế', tramCheBien: 'BEP_NONG', hinhAnh: '/images/dishes/bun-bo-hue.jpg' },
   { ten: 'Mì xào hải sản', giaBan: 85000, danhMuc: 'Cơm - Mì', moTa: 'Mì trứng xào tôm, mực', tramCheBien: 'BEP_NONG', hinhAnh: '/images/dishes/mi-xao-hai-san.jpg' },
-  
+
   // Đồ uống
   { ten: 'Coca-Cola', giaBan: 25000, danhMuc: 'Đồ uống', moTa: 'Lon 330ml', tramCheBien: 'BAR', hinhAnh: '/images/dishes/coca-cola.jpg' },
   { ten: 'Pepsi', giaBan: 25000, danhMuc: 'Đồ uống', moTa: 'Lon 330ml', tramCheBien: 'BAR', hinhAnh: '/images/dishes/pepsi.jpg' },
@@ -144,13 +139,13 @@ const dishes = [
   { ten: 'Sinh tố bơ', giaBan: 50000, danhMuc: 'Đồ uống', moTa: 'Sinh tố bơ Đắk Lắk', tramCheBien: 'BAR', hinhAnh: '/images/dishes/sinh-to-bo.jpg' },
   { ten: 'Trà đào', giaBan: 35000, danhMuc: 'Đồ uống', moTa: 'Trà đào cam sả', tramCheBien: 'BAR', hinhAnh: '/images/dishes/tra-dao.jpg' },
   { ten: 'Cà phê sữa đá', giaBan: 30000, danhMuc: 'Đồ uống', moTa: 'Cà phê phin Việt Nam', tramCheBien: 'BAR', hinhAnh: '/images/dishes/ca-phe-sua-da.jpg' },
-  
+
   // Tráng miệng
   { ten: 'Chè thái', giaBan: 35000, danhMuc: 'Tráng miệng', moTa: 'Chè thái trái cây', tramCheBien: 'BEP_LANH', hinhAnh: '/images/dishes/che-thai.jpg' },
   { ten: 'Bánh flan', giaBan: 30000, danhMuc: 'Tráng miệng', moTa: 'Bánh flan caramen', tramCheBien: 'BEP_LANH', hinhAnh: '/images/dishes/banh-flan.jpg' },
   { ten: 'Kem vanilla', giaBan: 40000, danhMuc: 'Tráng miệng', moTa: '2 viên kem vanilla', tramCheBien: 'BEP_LANH', hinhAnh: '/images/dishes/kem-vanilla.jpg' },
   { ten: 'Trái cây thập cẩm', giaBan: 55000, danhMuc: 'Tráng miệng', moTa: 'Dĩa trái cây tươi', tramCheBien: 'BEP_LANH', hinhAnh: '/images/dishes/trai-cay-thap-cam.jpg' },
-  
+
   // Đặc biệt
   { ten: 'Lẩu thái hải sản', giaBan: 450000, danhMuc: 'Đặc biệt', moTa: 'Lẩu cho 4-6 người', tramCheBien: 'BEP_NONG', hinhAnh: '/images/dishes/lau-thai-hai-san.jpg' },
   { ten: 'Combo nướng BBQ', giaBan: 550000, danhMuc: 'Đặc biệt', moTa: 'Set nướng cho 4 người', tramCheBien: 'BEP_NUONG', hinhAnh: '/images/dishes/combo-nuong-bbq.jpg' },
@@ -164,27 +159,27 @@ const materials = [
   { ten: 'Thịt heo', donViTinh: 'kg', soLuongTon: 20, mucTonToiThieu: 8, giaNhapGanNhat: 120000 },
   { ten: 'Thịt gà', donViTinh: 'kg', soLuongTon: 18, mucTonToiThieu: 5, giaNhapGanNhat: 85000 },
   { ten: 'Sườn heo', donViTinh: 'kg', soLuongTon: 10, mucTonToiThieu: 4, giaNhapGanNhat: 150000 },
-  
+
   // Hải sản
   { ten: 'Tôm sú', donViTinh: 'kg', soLuongTon: 8, mucTonToiThieu: 3, giaNhapGanNhat: 280000 },
   { ten: 'Mực tươi', donViTinh: 'kg', soLuongTon: 5, mucTonToiThieu: 2, giaNhapGanNhat: 180000 },
   { ten: 'Cá hồi', donViTinh: 'kg', soLuongTon: 4, mucTonToiThieu: 2, giaNhapGanNhat: 450000 },
   { ten: 'Sò điệp', donViTinh: 'kg', soLuongTon: 2, mucTonToiThieu: 1, giaNhapGanNhat: 350000 },
-  
+
   // Rau củ
   { ten: 'Rau xà lách', donViTinh: 'kg', soLuongTon: 5, mucTonToiThieu: 2, giaNhapGanNhat: 25000 },
   { ten: 'Cà chua', donViTinh: 'kg', soLuongTon: 8, mucTonToiThieu: 3, giaNhapGanNhat: 20000 },
   { ten: 'Hành tây', donViTinh: 'kg', soLuongTon: 10, mucTonToiThieu: 4, giaNhapGanNhat: 15000 },
   { ten: 'Ớt chuông', donViTinh: 'kg', soLuongTon: 3, mucTonToiThieu: 1, giaNhapGanNhat: 40000 },
   { ten: 'Khoai tây', donViTinh: 'kg', soLuongTon: 15, mucTonToiThieu: 5, giaNhapGanNhat: 18000 },
-  
+
   // Gia vị
   { ten: 'Dầu ăn', donViTinh: 'lít', soLuongTon: 20, mucTonToiThieu: 5, giaNhapGanNhat: 35000 },
   { ten: 'Nước mắm', donViTinh: 'lít', soLuongTon: 10, mucTonToiThieu: 3, giaNhapGanNhat: 45000 },
   { ten: 'Đường', donViTinh: 'kg', soLuongTon: 15, mucTonToiThieu: 5, giaNhapGanNhat: 20000 },
   { ten: 'Muối', donViTinh: 'kg', soLuongTon: 10, mucTonToiThieu: 3, giaNhapGanNhat: 8000 },
   { ten: 'Bột ngọt', donViTinh: 'kg', soLuongTon: 5, mucTonToiThieu: 2, giaNhapGanNhat: 55000 },
-  
+
   // Đồ uống
   { ten: 'Coca-Cola (thùng)', donViTinh: 'thùng', soLuongTon: 5, mucTonToiThieu: 2, giaNhapGanNhat: 220000 },
   { ten: 'Pepsi (thùng)', donViTinh: 'thùng', soLuongTon: 5, mucTonToiThieu: 2, giaNhapGanNhat: 210000 },
@@ -193,7 +188,7 @@ const materials = [
   { ten: 'Cam tươi', donViTinh: 'kg', soLuongTon: 10, mucTonToiThieu: 3, giaNhapGanNhat: 35000 },
   { ten: 'Bơ Đắk Lắk', donViTinh: 'kg', soLuongTon: 5, mucTonToiThieu: 2, giaNhapGanNhat: 60000 },
   { ten: 'Cà phê phin', donViTinh: 'kg', soLuongTon: 3, mucTonToiThieu: 1, giaNhapGanNhat: 180000 },
-  
+
   // Low stock items for testing alerts
   { ten: 'Gạo', donViTinh: 'kg', soLuongTon: 3, mucTonToiThieu: 10, giaNhapGanNhat: 18000 },
   { ten: 'Bún tươi', donViTinh: 'kg', soLuongTon: 1, mucTonToiThieu: 5, giaNhapGanNhat: 15000 },
@@ -216,18 +211,18 @@ const tables = [
   { ten: 'A04', soGhe: 4, khuVuc: 'Tầng 1 - Trong nhà', trangThai: 'DADAT', posX: 50, posY: 150 },
   { ten: 'A05', soGhe: 4, khuVuc: 'Tầng 1 - Trong nhà', trangThai: 'TRONG', posX: 150, posY: 150 },
   { ten: 'A06', soGhe: 8, khuVuc: 'Tầng 1 - Trong nhà', trangThai: 'CHOTHANHTOAN', posX: 250, posY: 150 },
-  
+
   // Tầng 1 - Sân vườn
   { ten: 'B01', soGhe: 4, khuVuc: 'Tầng 1 - Sân vườn', trangThai: 'TRONG', posX: 50, posY: 50 },
   { ten: 'B02', soGhe: 4, khuVuc: 'Tầng 1 - Sân vườn', trangThai: 'COKHACH', posX: 150, posY: 50 },
   { ten: 'B03', soGhe: 6, khuVuc: 'Tầng 1 - Sân vườn', trangThai: 'TRONG', posX: 250, posY: 50 },
   { ten: 'B04', soGhe: 4, khuVuc: 'Tầng 1 - Sân vườn', trangThai: 'TRONG', posX: 50, posY: 150 },
-  
+
   // Tầng 2 - VIP
   { ten: 'V01', soGhe: 10, khuVuc: 'Tầng 2 - VIP', trangThai: 'DADAT', posX: 100, posY: 100 },
   { ten: 'V02', soGhe: 12, khuVuc: 'Tầng 2 - VIP', trangThai: 'TRONG', posX: 250, posY: 100 },
   { ten: 'V03', soGhe: 8, khuVuc: 'Tầng 2 - VIP', trangThai: 'TRONG', posX: 175, posY: 200 },
-  
+
   // Tầng 3 - Sân thượng
   { ten: 'T01', soGhe: 4, khuVuc: 'Tầng 3 - Sân thượng', trangThai: 'TRONG', posX: 50, posY: 50 },
   { ten: 'T02', soGhe: 4, khuVuc: 'Tầng 3 - Sân thượng', trangThai: 'COKHACH', posX: 150, posY: 50 },
@@ -521,17 +516,17 @@ async function main() {
   const today = new Date();
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
-  
+
   const allTables = await prisma.ban.findMany();
   const allCustomers = await prisma.khachHang.findMany();
-  
+
   if (allCustomers.length > 0 && allTables.length > 0) {
     const reservations = [
       { khachHangId: allCustomers[0].id, banId: allTables[0].id, soKhach: 4, thoiGianDen: new Date(today.setHours(12, 0, 0, 0)), ghiChu: 'Sinh nhật', trangThai: 'CHODEN' },
       { khachHangId: allCustomers[1].id, banId: allTables[1].id, soKhach: 6, thoiGianDen: new Date(today.setHours(18, 30, 0, 0)), ghiChu: 'Họp công ty', trangThai: 'CHODEN' },
       { khachHangId: allCustomers[2].id, banId: allTables[2].id, soKhach: 2, thoiGianDen: new Date(tomorrow.setHours(19, 0, 0, 0)), ghiChu: 'Kỷ niệm ngày cưới', trangThai: 'CHODEN' },
     ];
-    
+
     for (const res of reservations) {
       const exists = await prisma.datBan.findFirst({
         where: {
@@ -549,7 +544,7 @@ async function main() {
   console.log('🧾 Creating sample orders...');
   const occupiedTables = await prisma.ban.findMany({ where: { trangThai: 'COKHACH' } });
   const allDishes = await prisma.monAn.findMany({ take: 10 });
-  
+
   for (const table of occupiedTables) {
     const existingOrder = await prisma.donHang.findFirst({ where: { banId: table.id, trangThai: 'open' } });
     if (!existingOrder && allDishes.length > 0) {
@@ -560,11 +555,11 @@ async function main() {
           trangThai: 'open',
         },
       });
-      
+
       // Add 2-4 random dishes to order
       const numItems = Math.floor(Math.random() * 3) + 2;
       const selectedDishes = allDishes.sort(() => 0.5 - Math.random()).slice(0, numItems);
-      
+
       for (const dish of selectedDishes) {
         await prisma.chiTietDonHang.create({
           data: {

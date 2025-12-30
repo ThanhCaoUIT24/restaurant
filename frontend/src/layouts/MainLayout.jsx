@@ -67,6 +67,7 @@ import { usePermissions } from '../hooks/usePermissions';
 import PermissionGate from '../components/PermissionGate';
 import { useInventoryAlerts } from '../hooks/useInventory';
 import { useVoidRequestsCount } from '../hooks/useVoidRequests';
+import { useNotifications } from '../hooks/useNotifications';
 
 const DRAWER_WIDTH = 280;
 const DRAWER_WIDTH_COLLAPSED = 80;
@@ -111,7 +112,6 @@ const menuItems = [
         permission: PERMISSIONS.STOCK_VIEW,
         children: [
           { title: 'Nguyên vật liệu', path: '/inventory', permission: PERMISSIONS.STOCK_VIEW },
-          { title: 'Nguyên liệu & Công thức', path: '/inventory/materials', permission: PERMISSIONS.STOCK_VIEW },
           { title: 'Cảnh báo tồn kho', path: '/inventory/alerts', permission: PERMISSIONS.STOCK_VIEW },
           { title: 'Điều chỉnh kho', path: '/stock/adjustments', permission: PERMISSIONS.STOCK_MANAGE },
         ],
@@ -123,7 +123,7 @@ const menuItems = [
         children: [
           { title: 'Nhà cung cấp', path: '/purchase/suppliers', permission: PERMISSIONS.PO_VIEW },
           { title: 'Đơn mua hàng', path: '/purchase/orders', permission: PERMISSIONS.PO_CREATE },
-          { title: 'Nhập kho', path: '/purchase/receipts', permission: PERMISSIONS.PO_VIEW },
+          { title: 'Nhập kho', path: '/purchase/receipts', permission: PERMISSIONS.STOCK_IMPORT },
         ],
       },
       {
@@ -349,7 +349,16 @@ const MainLayout = ({ title = 'Dashboard', children }) => {
     enabled: canViewStock,
     refetchInterval: 30000,
   });
+
+  // Custom Notifications
+  const { data: notifData, markRead, markAllRead } = useNotifications();
+  const notifications = notifData?.notifications || [];
+  const unreadCount = notifData?.unreadCount || 0;
+
+  console.log('MainLayout USER DEBUG:', user);
+
   const lowStockCount = stockAlerts.length;
+  const totalBadge = lowStockCount + unreadCount;
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -432,7 +441,7 @@ const MainLayout = ({ title = 'Dashboard', children }) => {
       {/* User info at bottom */}
       <Box sx={{ p: 2, borderTop: (theme) => `1px dashed ${alpha(theme.palette.divider, 0.5)}` }}>
         {collapsed && !isMobile ? (
-          <Tooltip title={user?.name || 'User'} placement="right">
+          <Tooltip title={user?.hoTen || user?.username} placement="right">
             <Avatar
               sx={{
                 width: 40,
@@ -443,7 +452,7 @@ const MainLayout = ({ title = 'Dashboard', children }) => {
               }}
               onClick={handleProfileClick}
             >
-              {user?.name?.[0] || 'U'}
+              {user?.hoTen?.[0] || 'U'}
             </Avatar>
           </Tooltip>
         ) : (
@@ -464,14 +473,14 @@ const MainLayout = ({ title = 'Dashboard', children }) => {
             onClick={handleProfileClick}
           >
             <Avatar sx={{ width: 40, height: 40, bgcolor: 'primary.main' }}>
-              {user?.name?.[0] || 'U'}
+              {user?.hoTen?.[0] || 'U'}
             </Avatar>
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Typography variant="subtitle2" noWrap>
-                {user?.name || 'User'}
+                {user?.hoTen || user?.username}
               </Typography>
               <Typography variant="caption" color="text.secondary" noWrap>
-                {user?.role || 'Staff'}
+                {user?.roles?.[0] || 'Staff'}
               </Typography>
             </Box>
           </Box>
@@ -569,7 +578,7 @@ const MainLayout = ({ title = 'Dashboard', children }) => {
             {/* Notifications */}
             <Tooltip title="Thông báo">
               <IconButton color="inherit" onClick={(e) => setNotifAnchor(e.currentTarget)}>
-                <Badge badgeContent={lowStockCount} color="error" showZero={false}>
+                <Badge badgeContent={totalBadge} color="error" showZero={false}>
                   <Notifications />
                 </Badge>
               </IconButton>
@@ -628,19 +637,13 @@ const MainLayout = ({ title = 'Dashboard', children }) => {
       >
         <Box sx={{ px: 2, py: 1.5 }}>
           <Typography variant="subtitle1" fontWeight={600}>
-            {user?.name || 'User'}
+            {user?.hoTen || user?.username}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            {user?.email || 'user@example.com'}
+            @{user?.username}
           </Typography>
         </Box>
         <Divider sx={{ my: 1 }} />
-        <MenuItem onClick={() => { handleCloseMenu(); navigate('/settings'); }}>
-          <ListItemIcon>
-            <Settings fontSize="small" />
-          </ListItemIcon>
-          Cài đặt
-        </MenuItem>
         <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>
           <ListItemIcon>
             <Logout fontSize="small" sx={{ color: 'error.main' }} />
@@ -657,40 +660,93 @@ const MainLayout = ({ title = 'Dashboard', children }) => {
         transformOrigin={{ horizontal: 'right', vertical: 'top' }}
         anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
         PaperProps={{
-          sx: { width: 320, maxHeight: 400, mt: 1 },
+          sx: { width: 360, maxHeight: 480, mt: 1 },
         }}
       >
         <Box sx={{ px: 2, py: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="subtitle1" fontWeight={600}>
             Thông báo
           </Typography>
-          <Chip
-            label={`${lowStockCount} sắp hết hàng`}
-            size="small"
-            color={lowStockCount > 0 ? 'error' : 'default'}
-          />
+          <Stack direction="row" spacing={1}>
+            {unreadCount > 0 && (
+              <Typography
+                variant="caption"
+                sx={{ cursor: 'pointer', color: 'primary.main', '&:hover': { textDecoration: 'underline' } }}
+                onClick={() => markAllRead.mutate()}
+              >
+                Đánh dấu đã đọc
+              </Typography>
+            )}
+          </Stack>
         </Box>
         <Divider />
-        <MenuItem
-          onClick={() => {
-            setNotifAnchor(null);
-            navigate('/inventory');
-          }}
-          disabled={!canViewStock}
-        >
-          <Box>
-            <Typography variant="body2" fontWeight={500}>
-              Sắp hết hàng
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {canViewStock
-                ? lowStockCount > 0
-                  ? `Có ${lowStockCount} nguyên liệu dưới mức tối thiểu`
-                  : 'Không có nguyên liệu sắp hết hàng'
-                : 'Bạn không có quyền xem kho hàng'}
-            </Typography>
-          </Box>
-        </MenuItem>
+
+        {/* Low Stock Alert Section */}
+        {lowStockCount > 0 && canViewStock && (
+          <>
+            <MenuItem
+              onClick={() => {
+                setNotifAnchor(null);
+                navigate('/inventory');
+              }}
+              sx={{ bgcolor: 'error.lighter' }}
+            >
+              <ListItemIcon>
+                <Inventory color="error" fontSize="small" />
+              </ListItemIcon>
+              <ListItemText
+                primary="Sắp hết hàng"
+                secondary={`Có ${lowStockCount} nguyên liệu dưới mức tối thiểu`}
+                primaryTypographyProps={{ variant: 'subtitle2', color: 'error.main' }}
+              />
+            </MenuItem>
+            <Divider />
+          </>
+        )}
+
+        {/* General Notifications List */}
+        <Box sx={{ maxHeight: 300, overflow: 'auto' }}>
+          {notifications.length === 0 && lowStockCount === 0 ? (
+            <Box sx={{ p: 2, textAlign: 'center' }}>
+              <Typography variant="body2" color="text.secondary">
+                Không có thông báo mới
+              </Typography>
+            </Box>
+          ) : (
+            notifications.map((notif) => (
+              <MenuItem
+                key={notif.id}
+                onClick={() => {
+                  if (!notif.daDoc) markRead.mutate(notif.id);
+                  if (notif.lienKet) {
+                    navigate(notif.lienKet);
+                    setNotifAnchor(null);
+                  }
+                }}
+                sx={{
+                  flexDirection: 'column',
+                  alignItems: 'flex-start',
+                  bgcolor: notif.daDoc ? 'transparent' : 'action.hover',
+                  borderBottom: '1px solid',
+                  borderColor: 'divider'
+                }}
+              >
+                <Box sx={{ display: 'flex', width: '100%', justifyContent: 'space-between' }}>
+                  <Typography variant="subtitle2" fontWeight={notif.daDoc ? 400 : 700}>
+                    {notif.tieuDe}
+                  </Typography>
+                  {!notif.daDoc && <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'primary.main', mt: 1 }} />}
+                </Box>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, whiteSpace: 'pre-wrap' }}>
+                  {notif.noiDung}
+                </Typography>
+                <Typography variant="caption" color="text.disabled" sx={{ mt: 1, alignSelf: 'flex-end' }}>
+                  {new Date(notif.createdAt).toLocaleString()}
+                </Typography>
+              </MenuItem>
+            ))
+          )}
+        </Box>
       </Menu>
     </Box>
   );

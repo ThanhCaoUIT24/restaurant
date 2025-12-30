@@ -101,90 +101,79 @@ const mapPaymentsToInvoicePaidAt = (payments) => {
 const buildRevenueChart = async (range) => {
   const now = new Date();
   const safeRange = ['week', 'month', 'year'].includes(range) ? range : 'week';
+  let from, to;
+  let categories = [];
+  let mapData = () => { };
 
   if (safeRange === 'week') {
-    const from = startOfDay(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6));
-    const to = endOfDay(now);
-    const payments = await prisma.thanhToan.findMany({
-      where: { createdAt: { gte: from, lte: to } },
-      select: { hoaDonId: true, createdAt: true },
-    });
-    const invoicePaidAt = mapPaymentsToInvoicePaidAt(payments);
-    const invoiceIds = Array.from(invoicePaidAt.keys());
-    const invoices = invoiceIds.length
-      ? await prisma.hoaDon.findMany({
-        where: { id: { in: invoiceIds }, trangThai: 'PAID' },
-        select: { id: true, tongThanhToan: true },
-      })
-      : [];
-    const totalByInvoiceId = new Map(invoices.map((i) => [i.id, Number(i.tongThanhToan || 0)]));
+    from = startOfDay(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6));
+    to = endOfDay(now);
+
+    // Generate last 7 days keys
     const dates = [];
-    const buckets = new Map();
     for (let i = 0; i < 7; i++) {
       const d = new Date(from);
-      d.setDate(from.getDate() + i);
+      d.setDate(d.getDate() + i);
       dates.push(d);
-      buckets.set(localDateKey(d), 0);
     }
-    for (const [invoiceId, paidAt] of invoicePaidAt.entries()) {
-      const k = localDateKey(paidAt);
-      if (!buckets.has(k)) continue;
-      buckets.set(k, buckets.get(k) + (totalByInvoiceId.get(invoiceId) || 0));
-    }
-    const keys = dates.map((d) => localDateKey(d));
-    const categories = dates.map((d) => formatWeekdayLabelVI(d));
-    const data = keys.map((k) => buckets.get(k));
-    return { categories, series: [{ name: 'Doanh thu', data }] };
-  }
+    categories = dates.map(d => formatWeekdayLabelVI(d));
 
-  if (safeRange === 'month') {
-    const from = startOfDay(new Date(now.getFullYear(), now.getMonth(), 1));
-    const to = endOfDay(now);
-    const payments = await prisma.thanhToan.findMany({
-      where: { createdAt: { gte: from, lte: to } },
-      select: { hoaDonId: true, createdAt: true },
-    });
-    const invoicePaidAt = mapPaymentsToInvoicePaidAt(payments);
-    const invoiceIds = Array.from(invoicePaidAt.keys());
-    const invoices = invoiceIds.length
-      ? await prisma.hoaDon.findMany({
-        where: { id: { in: invoiceIds }, trangThai: 'PAID' },
-        select: { id: true, tongThanhToan: true },
-      })
-      : [];
-    const totalByInvoiceId = new Map(invoices.map((i) => [i.id, Number(i.tongThanhToan || 0)]));
+    // Series data extraction
+    mapData = (payments) => {
+      const buckets = new Map(dates.map(d => [localDateKey(d), 0]));
+      for (const p of payments) {
+        const k = localDateKey(p.createdAt);
+        if (buckets.has(k)) {
+          buckets.set(k, buckets.get(k) + Number(p.soTien));
+        }
+      }
+      return dates.map(d => buckets.get(localDateKey(d)));
+    };
+  } else if (safeRange === 'month') {
+    from = startOfDay(new Date(now.getFullYear(), now.getMonth(), 1));
+    to = endOfDay(now);
+
     const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-    const data = Array(daysInMonth).fill(0);
-    for (const [invoiceId, paidAt] of invoicePaidAt.entries()) {
-      const dayIdx = paidAt.getDate() - 1;
-      if (dayIdx >= 0 && dayIdx < data.length) data[dayIdx] += (totalByInvoiceId.get(invoiceId) || 0);
-    }
-    const categories = Array.from({ length: daysInMonth }, (_, i) => String(i + 1));
-    return { categories, series: [{ name: 'Doanh thu', data }] };
+    categories = Array.from({ length: daysInMonth }, (_, i) => String(i + 1));
+
+    mapData = (payments) => {
+      const data = Array(daysInMonth).fill(0);
+      for (const p of payments) {
+        const d = new Date(p.createdAt).getDate(); // 1-31
+        if (d >= 1 && d <= daysInMonth) {
+          data[d - 1] += Number(p.soTien);
+        }
+      }
+      return data;
+    };
+  } else {
+    // year
+    from = startOfDay(new Date(now.getFullYear(), 0, 1));
+    to = endOfDay(now);
+
+    categories = Array.from({ length: 12 }, (_, i) => `T${i + 1}`);
+    mapData = (payments) => {
+      const data = Array(12).fill(0);
+      for (const p of payments) {
+        const m = new Date(p.createdAt).getMonth(); // 0-11
+        if (m >= 0 && m < 12) {
+          data[m] += Number(p.soTien);
+        }
+      }
+      return data;
+    };
   }
 
-  // year
-  const from = startOfDay(new Date(now.getFullYear(), 0, 1));
-  const to = endOfDay(now);
   const payments = await prisma.thanhToan.findMany({
-    where: { createdAt: { gte: from, lte: to } },
-    select: { hoaDonId: true, createdAt: true },
+    where: {
+      createdAt: { gte: from, lte: to },
+      hoaDon: { trangThai: 'PAID' } // Only count payments for fully paid invoices, or remove this to count all cash
+    },
+    select: { soTien: true, createdAt: true },
   });
-  const invoicePaidAt = mapPaymentsToInvoicePaidAt(payments);
-  const invoiceIds = Array.from(invoicePaidAt.keys());
-  const invoices = invoiceIds.length
-    ? await prisma.hoaDon.findMany({
-      where: { id: { in: invoiceIds }, trangThai: 'PAID' },
-      select: { id: true, tongThanhToan: true },
-    })
-    : [];
-  const totalByInvoiceId = new Map(invoices.map((i) => [i.id, Number(i.tongThanhToan || 0)]));
-  const data = Array(12).fill(0);
-  for (const [invoiceId, paidAt] of invoicePaidAt.entries()) {
-    const m = paidAt.getMonth();
-    if (m >= 0 && m < 12) data[m] += (totalByInvoiceId.get(invoiceId) || 0);
-  }
-  const categories = Array.from({ length: 12 }, (_, i) => `T${i + 1}`);
+
+  const data = mapData(payments);
+
   return { categories, series: [{ name: 'Doanh thu', data }] };
 };
 
@@ -216,6 +205,21 @@ const formatOrderItemsSummary = (order) => {
     .filter(Boolean);
   const extra = lines.length > 2 ? ` +${lines.length - 2} món` : '';
   return parts.join(', ') + extra;
+};
+
+const getDishCosts = async () => {
+  const allRecipes = await prisma.congThucMon.findMany({
+    include: { nguyenVatLieu: true },
+  });
+  const costs = new Map();
+  for (const r of allRecipes) {
+    if (!r.nguyenVatLieu) continue;
+    const price = Number(r.nguyenVatLieu.giaNhapGanNhat || 0);
+    const qty = Number(r.soLuong || 0);
+    const currentCost = costs.get(r.monAnId) || 0;
+    costs.set(r.monAnId, currentCost + price * qty);
+  }
+  return costs;
 };
 
 const dashboard = async (query = {}) => {
@@ -250,8 +254,26 @@ const dashboard = async (query = {}) => {
   const bills = paidInvoices.length;
   const avgBill = bills ? revenue / bills : 0;
 
-  // guest approximation: sum of seats from tables of paid orders
+  // Calculate Profit
+  const dishCosts = await getDishCosts();
   const paidOrderIds = paidInvoices.map((i) => i.donHangId).filter(Boolean);
+
+  // Fetch details to calculate COGS (Cost of Goods Sold)
+  const soldItems = paidOrderIds.length
+    ? await prisma.chiTietDonHang.findMany({
+      where: { donHangId: { in: paidOrderIds }, trangThai: { not: 'DAHUY' } },
+      select: { monAnId: true, soLuong: true }
+    })
+    : [];
+
+  let totalCost = 0;
+  for (const item of soldItems) {
+    const unitCost = dishCosts.get(item.monAnId) || 0;
+    totalCost += unitCost * item.soLuong;
+  }
+  const profit = revenue - totalCost;
+
+  // guest approximation: sum of seats from tables of paid orders
   const guests = paidInvoices.reduce((sum, inv) => sum + (inv.donHang?.ban?.soGhe || 0), 0);
 
   // ============ CALCULATE YESTERDAY'S DATA FOR TREND COMPARISON ============
@@ -285,7 +307,20 @@ const dashboard = async (query = {}) => {
   const yesterdayBills = yesterdayPaidInvoices.length;
   const yesterdayAvgBill = yesterdayBills ? yesterdayRevenue / yesterdayBills : 0;
 
+  // Calculate Yesterday Profit for Trend
   const yesterdayPaidOrderIds = yesterdayPaidInvoices.map((i) => i.donHangId).filter(Boolean);
+  const yesterdaySoldItems = yesterdayPaidOrderIds.length
+    ? await prisma.chiTietDonHang.findMany({
+      where: { donHangId: { in: yesterdayPaidOrderIds }, trangThai: { not: 'DAHUY' } },
+      select: { monAnId: true, soLuong: true }
+    })
+    : [];
+  let yesterdayTotalCost = 0;
+  for (const item of yesterdaySoldItems) {
+    const unitCost = dishCosts.get(item.monAnId) || 0;
+    yesterdayTotalCost += unitCost * item.soLuong;
+  }
+  const yesterdayProfit = yesterdayRevenue - yesterdayTotalCost;
   const yesterdayGuests = yesterdayPaidInvoices.reduce((sum, inv) => sum + (inv.donHang?.ban?.soGhe || 0), 0);
 
   // Calculate trend percentages
@@ -300,6 +335,7 @@ const dashboard = async (query = {}) => {
   };
 
   const revenueTrend = calcTrend(revenue, yesterdayRevenue);
+  const profitTrend = calcTrend(profit, yesterdayProfit);
   const billsTrend = calcTrend(bills, yesterdayBills);
   const avgBillTrend = calcTrend(avgBill, yesterdayAvgBill);
   const guestsTrend = calcTrend(guests, yesterdayGuests);
@@ -341,12 +377,24 @@ const dashboard = async (query = {}) => {
     const dish = dishById.get(r.monAnId);
     const qty = Number(r?._sum?.soLuong || 0);
     const giaBan = dish?.giaBan != null ? Number(dish.giaBan) : null;
+
+    // Calculate Unit Cost (Gia Von/Don vi)
+    const unitCost = dishCosts.get(r.monAnId) || 0;
+
+    // Calculate estimates
+    const revenueEst = giaBan != null ? giaBan * qty : 0;
+    const totalCost = unitCost * qty;
+    const profit = revenueEst - totalCost;
+
     return {
       monAnId: r.monAnId,
       ten: dish?.ten || r.monAnId,
       giaBan,
+      giaVon: unitCost,
       soLuong: qty,
-      doanhThuUocTinh: giaBan != null ? giaBan * qty : null,
+      doanhThuUocTinh: revenueEst,
+      tongGiaVon: totalCost,
+      loiNhuan: profit,
       _sum: r._sum,
     };
   };
@@ -361,6 +409,30 @@ const dashboard = async (query = {}) => {
       soLuongTon: Number(i.soLuongTon || 0),
       mucTonToiThieu: Number(i.mucTonToiThieu || 0),
     }));
+
+  // Calculate Category Distribution
+  const categoryStats = paidOrderIds.length
+    ? await prisma.chiTietDonHang.findMany({
+      where: { donHangId: { in: paidOrderIds }, trangThai: { not: 'DAHUY' } },
+      select: {
+        soLuong: true,
+        donGia: true,
+        monAn: { select: { danhMuc: { select: { ten: true } } } }
+      }
+    })
+    : [];
+
+  const categoryMap = {};
+  categoryStats.forEach(item => {
+    const catName = item.monAn?.danhMuc?.ten || 'Khác';
+    const rev = Number(item.donGia) * item.soLuong;
+    if (!categoryMap[catName]) categoryMap[catName] = 0;
+    categoryMap[catName] += rev;
+  });
+
+  const categoryDistribution = Object.entries(categoryMap)
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value);
 
   const recentLogs = await prisma.nhatKyHeThong.findMany({
     orderBy: { createdAt: 'desc' },
@@ -500,12 +572,14 @@ const dashboard = async (query = {}) => {
 
   return {
     revenue,
+    profit, // New Field
     bills,
     avgBill,
     guests,
     // Trend comparison data (today vs yesterday)
     trends: {
       revenue: revenueTrend,
+      profit: profitTrend, // New Trend
       bills: billsTrend,
       avgBill: avgBillTrend,
       guests: guestsTrend,
@@ -513,6 +587,7 @@ const dashboard = async (query = {}) => {
     revenueChart,
     bestSellers: bestSellers.map(mapSeller),
     worstSellers: worstSellers.map(mapSeller),
+    categoryDistribution,
     stockAlerts,
     recentActivities,
     todayShifts,
@@ -565,16 +640,25 @@ const menuPerformance = async (query) => {
     _sum: { soLuong: true, donGia: true },
   });
   const totalRevenue = rows.reduce((sum, r) => sum + Number(r._sum.donGia || 0) * Number(r._sum.soLuong || 0), 0);
+
+  const dishCosts = await getDishCosts();
+
   const items = await Promise.all(
     rows.map(async (r) => {
       const dish = await prisma.monAn.findUnique({ where: { id: r.monAnId } });
       const qty = Number(r._sum.soLuong || 0);
       const revenue = Number(r._sum.donGia || 0) * qty;
+      const unitCost = dishCosts.get(r.monAnId) || 0;
+      const totalCost = unitCost * qty;
+      const profit = revenue - totalCost;
+
       return {
         monAnId: r.monAnId,
         ten: dish?.ten || r.monAnId,
         soLuong: qty,
         doanhThu: revenue,
+        giaVon: totalCost, // New field
+        loiNhuan: profit,  // New field
         tyTrong: totalRevenue ? (revenue / totalRevenue) * 100 : 0,
       };
     }),

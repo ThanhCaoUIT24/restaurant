@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import MainLayout from '../../layouts/MainLayout';
 import {
   Paper,
@@ -54,7 +55,19 @@ import {
 } from '../../hooks/usePurchase';
 import { usePOs, useUpdatePOStatus } from '../../hooks/usePurchase';
 
+import { usePermissions } from '../../hooks/usePermissions';
+import { useNotifications } from '../../hooks/useNotifications';
+
 const shortId = (id) => (id ? String(id).slice(0, 8) : '');
+
+const PO_STATUS_LABEL = {
+  MOITAO: 'Mới tạo',
+  DAGUI: 'Chờ duyệt',
+  DADUYET: 'Đã duyệt',
+  DAHUY: 'Đã hủy',
+  DANHANMOTPHAN: 'Đã nhận một phần',
+  DANHANDU: 'Đã nhận đủ',
+};
 
 const formatMoney = (v) => {
   const n = Number(v || 0);
@@ -218,11 +231,11 @@ const SupplierRow = ({ supplier, onEdit, onDelete }) => {
           size="small"
           label={supplier.trangThai === 'active' || !supplier.trangThai ? 'Hoạt động' : 'Ngừng'}
           sx={{
-            background: supplier.trangThai === 'active' || !supplier.trangThai 
-              ? COLORS.successLight 
+            background: supplier.trangThai === 'active' || !supplier.trangThai
+              ? COLORS.successLight
               : COLORS.errorLight,
-            color: supplier.trangThai === 'active' || !supplier.trangThai 
-              ? COLORS.success 
+            color: supplier.trangThai === 'active' || !supplier.trangThai
+              ? COLORS.success
               : COLORS.error,
             fontWeight: 600,
           }}
@@ -268,6 +281,20 @@ const Suppliers = () => {
   const deleteSupplier = useDeleteSupplier();
   const { data: pos = [], refetch: refetchPOs } = usePOs();
   const updatePOStatus = useUpdatePOStatus();
+  const { hasPermission } = usePermissions();
+
+  const canApprove = hasPermission('PO_APPROVE'); // Manager
+  const canReceive = hasPermission('PO_CREATE'); // Stock Keeper (ThuKho)
+
+  // Real-time updates via notifications
+  const { data: notificationData } = useNotifications();
+  const lastNotification = notificationData?.notifications?.[0];
+
+  React.useEffect(() => {
+    if (lastNotification?.loai === 'PO') {
+      refetchPOs();
+    }
+  }, [lastNotification, refetchPOs]);
 
   // State
   const [searchQuery, setSearchQuery] = useState('');
@@ -311,7 +338,7 @@ const Suppliers = () => {
     const now = new Date();
     const month = now.getMonth();
     const year = now.getFullYear();
-    const allowed = new Set(['DAGUI', 'DANHANDU', 'DANHANMOTPHAN']);
+    const allowed = new Set(['DAGUI', 'DADUYET', 'DANHANDU', 'DANHANMOTPHAN']);
 
     return (pos || []).filter((po) => {
       if (!allowed.has(po.trangThai)) return false;
@@ -391,13 +418,14 @@ const Suppliers = () => {
     }
   };
 
-  const toggleReceived = async (po) => {
-    const isReceived = po.trangThai === 'DANHANDU' || po.trangThai === 'DANHANMOTPHAN';
-    const nextStatus = isReceived ? 'DAGUI' : 'DANHANDU';
+  const handleStatusUpdate = async (po, newStatus) => {
     try {
-      await updatePOStatus.mutateAsync({ id: po.id, status: nextStatus });
-      setSnackbar({ open: true, message: '✅ Cập nhật trạng thái nhận hàng thành công!', severity: 'success' });
+      await updatePOStatus.mutateAsync({ id: po.id, status: newStatus });
+      setSnackbar({ open: true, message: '✅ Cập nhật trạng thái thành công!', severity: 'success' });
       refetchPOs();
+      if (selectedPO?.id === po.id) {
+        setSelectedPO((prev) => ({ ...prev, trangThai: newStatus }));
+      }
     } catch (err) {
       setSnackbar({
         open: true,
@@ -473,12 +501,12 @@ const Suppliers = () => {
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 700, background: COLORS.surfaceHover }}>PO</TableCell>
+                  <TableCell sx={{ fontWeight: 700, background: COLORS.surfaceHover }}>Mã Đơn hàng</TableCell>
                   <TableCell sx={{ fontWeight: 700, background: COLORS.surfaceHover }}>Nhà cung cấp</TableCell>
                   <TableCell sx={{ fontWeight: 700, background: COLORS.surfaceHover }}>Ngày</TableCell>
                   <TableCell sx={{ fontWeight: 700, background: COLORS.surfaceHover }}>Trạng thái</TableCell>
                   <TableCell sx={{ fontWeight: 700, background: COLORS.surfaceHover }} align="right">
-                    Nhận hàng
+                    Thao tác
                   </TableCell>
                 </TableRow>
               </TableHead>
@@ -492,28 +520,54 @@ const Suppliers = () => {
                       sx={{ cursor: 'pointer' }}
                       onClick={() => setSelectedPO(po)}
                     >
-                      <TableCell>{`PO ${shortId(po.id)}`}</TableCell>
+                      <TableCell>{`#${shortId(po.id)}`}</TableCell>
                       <TableCell>{po.nhaCungCap?.ten || ''}</TableCell>
                       <TableCell>{formatDateTime(po.createdAt)}</TableCell>
-                      <TableCell>{po.trangThai}</TableCell>
+                      <TableCell>{PO_STATUS_LABEL[po.trangThai] || po.trangThai}</TableCell>
                       <TableCell align="right">
-                        <Button
-                          size="small"
-                          variant="contained"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleReceived(po);
-                          }}
-                          sx={{
-                            borderRadius: 2,
-                            textTransform: 'none',
-                            background: isReceived
-                              ? `linear-gradient(135deg, ${COLORS.success}, ${COLORS.success}CC)`
-                              : `linear-gradient(135deg, ${COLORS.warning}, ${COLORS.warning}CC)`,
-                          }}
-                        >
-                          {isReceived ? 'Đã nhận' : 'Chưa nhận'}
-                        </Button>
+                        {/* Status: DAGUI (Sent/Pending Approval) */}
+                        {po.trangThai === 'DAGUI' && (
+                          canApprove ? (
+                            <Button
+                              size="small"
+                              variant="contained"
+                              color="success"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleStatusUpdate(po, 'DADUYET');
+                              }}
+                              sx={{ borderRadius: 2, textTransform: 'none' }}
+                            >
+                              Duyệt
+                            </Button>
+                          ) : (
+                            <Chip label="Chờ duyệt" size="small" color="warning" variant="outlined" />
+                          )
+                        )}
+
+                        {/* Status: DADUYET (Approved) -> Allow Receive for Stock Keeper */}
+                        {po.trangThai === 'DADUYET' && (
+                          canReceive ? (
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                window.location.href = `/purchase/receipts?poId=${po.id}`;
+                              }}
+                              sx={{ borderRadius: 2, textTransform: 'none' }}
+                            >
+                              Nhận hàng
+                            </Button>
+                          ) : (
+                            <Chip label="Đã duyệt" size="small" color="success" variant="outlined" />
+                          )
+                        )}
+
+                        {/* Status: Received */}
+                        {(po.trangThai === 'DANHANDU' || po.trangThai === 'DANHANMOTPHAN') && (
+                          <Chip label="Đã nhận" size="small" color="success" />
+                        )}
                       </TableCell>
                     </TableRow>
                   );
@@ -522,7 +576,7 @@ const Suppliers = () => {
                   <TableRow>
                     <TableCell colSpan={5}>
                       <Typography color={COLORS.textSecondary} sx={{ py: 2 }}>
-                        Chưa có PO đã gửi trong tháng này.
+                        Chưa có đơn hàng nào đã gửi trong tháng này.
                       </Typography>
                     </TableCell>
                   </TableRow>
@@ -788,14 +842,14 @@ const Suppliers = () => {
         >
           <DialogTitle sx={{ pb: 1 }}>
             {selectedPO
-              ? `Chi tiết PO ${shortId(selectedPO.id)} - ${selectedPO.nhaCungCap?.ten || ''}`
-              : 'Chi tiết PO'}
+              ? `Chi tiết đơn #${shortId(selectedPO.id)} - ${selectedPO.nhaCungCap?.ten || ''}`
+              : 'Chi tiết đơn hàng'}
           </DialogTitle>
           <DialogContent dividers>
             {selectedPO && (
               <Stack spacing={2}>
                 <Typography variant="body2" color={COLORS.textSecondary}>
-                  Ngày tạo: {formatDateTime(selectedPO.createdAt)} | Trạng thái: {selectedPO.trangThai}
+                  Ngày tạo: {formatDateTime(selectedPO.createdAt)} | Trạng thái: {PO_STATUS_LABEL[selectedPO.trangThai] || selectedPO.trangThai}
                 </Typography>
                 <Table size="small">
                   <TableHead>
@@ -820,19 +874,41 @@ const Suppliers = () => {
                     {(!selectedPO.chiTiet || selectedPO.chiTiet.length === 0) && (
                       <TableRow>
                         <TableCell colSpan={4}>
-                          <Typography color={COLORS.textSecondary}>PO chưa có dòng nguyên liệu.</Typography>
+                          <Typography color={COLORS.textSecondary}>Đơn hàng chưa có dòng nguyên liệu.</Typography>
                         </TableCell>
                       </TableRow>
                     )}
                   </TableBody>
                 </Table>
                 <Typography fontWeight={700} color={COLORS.textPrimary}>
-                  Tổng PO: {formatMoney(calcPOTotal(selectedPO))} đ
+                  Tổng tiền: {formatMoney(calcPOTotal(selectedPO))} đ
                 </Typography>
               </Stack>
             )}
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 3 }}>
+            {/* Approve Button (Manager) */}
+            {selectedPO && canApprove && selectedPO.trangThai === 'DAGUI' && (
+              <Button
+                variant="contained"
+                color="success"
+                onClick={() => handleStatusUpdate(selectedPO, 'DADUYET')}
+                sx={{ borderRadius: 2 }}
+              >
+                Duyệt đơn
+              </Button>
+            )}
+
+            {/* Receive Button (Stock Keeper) */}
+            {selectedPO && canReceive && selectedPO.trangThai === 'DADUYET' && (
+              <Button
+                variant="outlined"
+                onClick={() => handleStatusUpdate(selectedPO, 'DANHANDU')}
+                sx={{ borderRadius: 2 }}
+              >
+                Nhận hàng
+              </Button>
+            )}
             <Button onClick={() => setSelectedPO(null)} sx={{ borderRadius: 2 }}>
               Đóng
             </Button>
@@ -895,7 +971,7 @@ const Suppliers = () => {
           </Alert>
         </Snackbar>
       </Box>
-    </MainLayout>
+    </MainLayout >
   );
 };
 
