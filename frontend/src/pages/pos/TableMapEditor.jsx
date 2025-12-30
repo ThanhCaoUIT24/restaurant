@@ -257,7 +257,6 @@ const DraggableTable = ({
             inset 0 1px 0 rgba(255,255,255,0.2),
             inset 0 -1px 0 rgba(0,0,0,0.1)
           `,
-          border: `3px solid ${areaColor || statusColor.bg}`,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -947,6 +946,71 @@ export default function TableMapEditor() {
                 />
               ))}
             </AnimatePresence>
+
+            {/* Legend - Chú thích trạng thái bàn */}
+            <Paper
+              elevation={0}
+              sx={{
+                position: 'absolute',
+                bottom: 16,
+                right: 16,
+                background: alpha(editorColors.surface, 0.95),
+                backdropFilter: 'blur(10px)',
+                borderRadius: 2,
+                p: 2,
+                border: `1px solid ${editorColors.border}`,
+                minWidth: 180,
+              }}
+            >
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  color: editorColors.text,
+                  fontWeight: 600,
+                  mb: 1.5,
+                  fontSize: '0.8rem',
+                  letterSpacing: 0.5,
+                }}
+              >
+                CHÚ THÍCH TRẠNG THÁI
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                {[
+                  { key: 'TRONG', label: 'Trống', color: editorColors.TRONG.bg },
+                  { key: 'COKHACH', label: 'Có khách', color: editorColors.COKHACH.bg },
+                  { key: 'DADAT', label: 'Đã đặt trước', color: editorColors.DADAT.bg },
+                ].map((status) => (
+                  <Box
+                    key={status.key}
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1.5,
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: 16,
+                        height: 16,
+                        borderRadius: '50%',
+                        background: status.color,
+                        boxShadow: `0 2px 8px ${status.color}60`,
+                        flexShrink: 0,
+                      }}
+                    />
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: editorColors.textMuted,
+                        fontSize: '0.75rem',
+                      }}
+                    >
+                      {status.label}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+            </Paper>
 
             {/* Empty State */}
             {filteredTables.length === 0 && (

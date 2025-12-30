@@ -99,6 +99,14 @@ const remove = async (id) => {
     throw Object.assign(new Error('Bàn không tồn tại'), { status: 404 });
   }
 
+  // Check table status - không cho xóa bàn đang có khách hoặc đã đặt
+  if (table.trangThai === 'DADAT') {
+    throw Object.assign(new Error('Không thể xóa bàn đã được đặt trước'), { status: 400 });
+  }
+  if (table.trangThai === 'COKHACH') {
+    throw Object.assign(new Error('Không thể xóa bàn đang có khách'), { status: 400 });
+  }
+
   // Check if table has OPEN orders only (allow deletion if orders are closed/completed)
   const openOrdersCount = await prisma.donHang.count({
     where: {
