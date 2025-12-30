@@ -24,7 +24,6 @@ npm-debug.log*
 .vscode/
 *.swp
 *.swo
-.DS_Store
 
 # Prisma
 backend/prisma/*.db
@@ -57,3 +56,8 @@ ENV/
 *_full.txt
 SE104_extracted.txt
 SE104_full.txt
+
+# Local/Junk Files
+debug-permissions.html
+test-login.html
+package-lock.json
