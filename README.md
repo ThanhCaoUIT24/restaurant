@@ -95,9 +95,11 @@ The seed data provides the following default users for testing:
 | Role | Username | Password |
 | :--- | :--- | :--- |
 | **Admin** | `admin` | `admin123` |
-| **Manager** | `quanly` | `quanly123` |
-| **Cashier** | `thungan` | `thungan123` |
-| **Kitchen** | `bep` | `bep123` |
+| **Manager (Quản lý)** | `manager` | `manager123` |
+| **Cashier (Thu ngân)** | `cashier` | `cashier123` |
+| **Waiter (Phục vụ)** | `waiter` | `waiter123` |
+| **Kitchen (Bếp)** | `chef` | `chef123` |
+| **Stock (Thủ kho)** | `stock` | `stock123` |
 
 ## 📂 Project Structure
 
